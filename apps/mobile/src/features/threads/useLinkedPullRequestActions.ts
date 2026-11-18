@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   pullRequestLinkProject,
   resolveLinkPullRequestInput,
@@ -62,7 +63,7 @@ export function useLinkedPullRequestActions(input: {
   };
 
   const setLinked = (
-    reference: { host: string; repository: string; number: number; url: string },
+    reference: { host: string; repository: string; number: ChangeRequestNumber; url: string },
     linked: boolean,
   ) => {
     if (thread === null) return;

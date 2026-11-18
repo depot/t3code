@@ -44,6 +44,8 @@ export function pullRequestActionLabel(
   terminology: ChangeRequestTerminology,
 ): string {
   switch (action) {
+    case "withdraw-approval":
+      return "Withdraw approval";
     case "merge":
       return `Merge ${terminology.singular}`;
     case "ready":
@@ -70,6 +72,7 @@ export function pullRequestActionLabel(
 }
 
 export const PR_ACTION_ICONS = {
+  "withdraw-approval": "arrow.uturn.backward",
   merge: PullRequestGlyph.merged,
   ready: "checkmark.circle",
   draft: "pencil",
@@ -110,6 +113,7 @@ export function allowedUpdateMethods(pr: ActionDetail) {
 export function canPerformPullRequestAction(pr: ActionDetail, action: PullRequestAction) {
   if (!pr.capabilities.actions.includes(action) || !pr.viewerPermissions.actions.includes(action))
     return false;
+  if (action === "withdraw-approval") return true;
   if (action === "reopen") return pr.state === "closed";
   if (action === "revert") return pr.state === "merged";
   if (action === "delete-branch")

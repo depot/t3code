@@ -75,7 +75,9 @@ describe("paged mobile pull request diffs", () => {
           ...nextPage,
           result: {
             ...nextPage.result,
-            omittedFileStats: [{ path: "large.ts", additions: 4000, deletions: 2000 }],
+            omittedFileStats: [
+              { path: "large.ts", additions: 0, deletions: 0, statsIncomplete: true },
+            ],
           },
         },
       ],
@@ -86,7 +88,7 @@ describe("paged mobile pull request diffs", () => {
     expect(refreshed).not.toBe(combined);
     if (refreshed.kind !== "files") throw new Error("Expected refreshed files");
     expect(refreshed.files[0]).toBe(first.files[0]);
-    expect(refreshed.files[1]).toMatchObject({ additions: 4000, deletions: 2000 });
+    expect(refreshed.files[1]).toMatchObject({ additions: 0, deletions: 0, statsIncomplete: true });
     expect(combined.files[1]?.additions).toBe(3000);
   });
 
@@ -154,6 +156,10 @@ describe("paged mobile pull request diffs", () => {
     );
     expect(retainPullRequestDiffPage(pages, null, first)).toBe(pages);
     expect(retainPullRequestDiffPage(pages, null, { ...first })).toBe(pages);
+    const revised = { ...first, reviewRevision: { headOid: "head", baseOid: "base" } };
+    expect(retainPullRequestDiffPage(pages, null, revised)).toEqual([
+      { cursor: null, result: revised },
+    ]);
     const refreshed = retainPullRequestDiffPage(pages, null, diff("changed.ts"));
     expect(refreshed).toHaveLength(1);
     expect(refreshed[0]?.result.patch).toContain("changed.ts");

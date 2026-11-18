@@ -312,6 +312,11 @@ export function PullRequestActionsMenu({
             <MenuSeparator />
           </>
         ) : null}
+        {can("withdraw-approval") ? (
+          <MenuItem disabled={actionPending} onClick={() => void perform("withdraw-approval")}>
+            Withdraw approval
+          </MenuItem>
+        ) : null}
         {detail.state === "open" ? (
           <>
             {showsDraftToggle ? (

@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import type { EnvironmentId, PullRequestRef, PullRequestStackMembership } from "@t3tools/contracts";
 import { useState } from "react";
@@ -17,7 +18,7 @@ function StackBody({
   environmentId: EnvironmentId;
   reference: PullRequestRef;
   onSelect: (reference: PullRequestRef) => void;
-  stackNumber: number;
+  stackNumber: ChangeRequestNumber;
 }) {
   const query = usePullRequestStack(environmentId, reference);
   if (query.data !== null) {

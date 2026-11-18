@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import { removeAgentCredits } from "@t3tools/source-control-core/server/mergeMessage";
 import * as Cache from "effect/Cache";
@@ -331,7 +332,7 @@ export const make = Effect.gen(function* () {
       cause: error,
     });
 
-  const readChecks = (input: ProviderRepositoryRef & { readonly number: number }) =>
+  const readChecks = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
     cli.getPullRequestDetail(input).pipe(
       Effect.flatMap((pullRequest) =>
         (pullRequest.state !== "open" || pullRequest.isCrossRepository !== true

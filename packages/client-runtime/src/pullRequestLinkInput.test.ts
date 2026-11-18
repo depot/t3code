@@ -1,17 +1,23 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import { sourceControlClients } from "./sourceControlClients.ts";
 
 import { parsePullRequestReference, resolveLinkPullRequestInput } from "./pullRequestLinkInput.ts";
 
-const changeRequestWebUrl = (kind: string, host: string, repository: string, number: number) =>
-  sourceControlClients.get(kind).changeRequestUrl({ host, repository, number });
+const changeRequestWebUrl = (
+  kind: string,
+  host: string,
+  repository: string,
+  number: ChangeRequestNumber,
+) => sourceControlClients.get(kind).changeRequestUrl({ host, repository, number });
 
 const project = {
   host: "github.com",
   repository: "acme/web",
   terminology: sourceControlClients.get("github").changeRequest,
-  webUrl: (number: number) => changeRequestWebUrl("github", "github.com", "acme/web", number),
+  webUrl: (number: ChangeRequestNumber) =>
+    changeRequestWebUrl("github", "github.com", "acme/web", number),
 };
 
 describe("resolveLinkPullRequestInput", () => {
@@ -38,6 +44,28 @@ describe("resolveLinkPullRequestInput", () => {
           number: 42,
           url: `https://${host}/acme/${repository}/pulls/42`,
         },
+      });
+    }
+  });
+
+  it("links Depot native IDs from URLs and the project repository", () => {
+    const depot = sourceControlClients.get("depot");
+    const url = "https://depot.dev/orgs/org1/code/repositories/repo1/merge-requests?id=mr_abc123";
+    for (const reference of [url, "mr_abc123"]) {
+      expect(
+        resolveLinkPullRequestInput({
+          reference,
+          project: {
+            host: "depot.dev",
+            repository: "org1/repo1",
+            terminology: depot.changeRequest,
+            webUrl: (number) =>
+              depot.changeRequestUrl({ host: "depot.dev", repository: "org1/repo1", number }),
+          },
+          hasProject: () => true,
+        }),
+      ).toEqual({
+        link: { host: "depot.dev", repository: "org1/repo1", number: "mr_abc123", url },
       });
     }
   });

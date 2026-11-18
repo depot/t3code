@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { pipe } from "effect/Function";
 import {
   scopeProjectRef,
@@ -204,7 +205,7 @@ function resolveThreadPullRequestBadgePresentation({
   status,
 }: {
   readonly badge: ThreadPullRequestBadge | null;
-  readonly number?: number | undefined;
+  readonly number?: ChangeRequestNumber | undefined;
   readonly url?: string | undefined;
   readonly status: PrStatusIndicator | null;
 }): ThreadPullRequestBadgePresentation | null {
@@ -251,7 +252,7 @@ export function ThreadPullRequestBadgeControl({
   render: ReactElement<{ render?: useRender.RenderProp }>;
   badge: ThreadPullRequestBadge | null;
   pullRequests: ReadonlyArray<ThreadPullRequestLink>;
-  number?: number | undefined;
+  number?: ChangeRequestNumber | undefined;
   url?: string | undefined;
   status: PrStatusIndicator | null;
   onOpenList: () => void;
@@ -289,7 +290,7 @@ function PullRequestBadge({
   presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
   opensList: boolean;
   url: string | undefined;
-  number: number | undefined;
+  number: ChangeRequestNumber | undefined;
   status: PrStatusIndicator | null;
   pullRequests: ReadonlyArray<ThreadPullRequestLink>;
   onOpenList: () => void;
@@ -407,7 +408,7 @@ function ThreadPullRequestMiniListItem({
   onOpenPullRequest,
   children,
 }: {
-  number: number;
+  number: ChangeRequestNumber;
   url: string;
   title: string;
   presentation: Pick<ThreadPullRequestBadgePresentation, "Icon" | "toneClassName"> | null;

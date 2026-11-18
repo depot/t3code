@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import { canonicalRepositoryPath } from "@t3tools/shared/git";
 import {
@@ -27,7 +28,7 @@ const REPOSITORY_PAGE_PATH = /^\/([^/]+(?:\/[^/]+)+?)\/src\/(?:branch|tag|commit
 
 const KIND = SourceControlProviderKind.make("forgejo");
 
-const changeRequestHeadRef = (number: number) => `refs/pull/${number}/head`;
+const changeRequestHeadRef = (number: ChangeRequestNumber) => `refs/pull/${number}/head`;
 
 /**
  * The repository's browser URL the server resolved from the signed-in account, which is the

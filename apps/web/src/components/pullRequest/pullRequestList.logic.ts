@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 
 import { resolvePullRequestAuthorFilter } from "@t3tools/contracts";
@@ -308,7 +309,7 @@ export interface PullRequestStatsTarget {
     readonly refs: ReadonlyArray<{
       readonly projectId: ProjectId;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }>;
   };
 }
@@ -499,7 +500,7 @@ export function mergePullRequestDiffStats(
   stats: ReadonlyArray<{
     readonly environmentId: string;
     readonly projectId: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly additions: number;
     readonly deletions: number;
   }>,
@@ -518,7 +519,7 @@ export function mergePullRequestDiffStats(
 export const pullRequestDiffStatKey = (row: {
   readonly environmentId: string;
   readonly projectId: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
 }) => `${row.environmentId} ${row.projectId} ${row.number}`;
 
 export interface MergedPullRequestList {

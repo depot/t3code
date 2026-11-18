@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { trimOptionalString } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as Cause from "effect/Cause";
 import * as DateTime from "effect/DateTime";
@@ -9,7 +10,7 @@ import { PositiveInt, TrimmedNonEmptyString } from "@t3tools/contracts";
 import { decodeJsonResult } from "@t3tools/shared/schemaJson";
 
 export interface NormalizedGitHubPullRequestRecord {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly baseRefName: string;

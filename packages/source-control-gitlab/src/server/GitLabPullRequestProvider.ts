@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { removeAgentCredits } from "@t3tools/source-control-core/server/mergeMessage";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import * as Cache from "effect/Cache";
@@ -174,13 +175,13 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host: string;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }) => JSON.stringify([input.cwd, input.repository, input.number, input.host]);
   const mergeRequestDetail = (input: {
     readonly cwd: string;
     readonly host: string;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }) => Cache.get(mergeRequestDetails, detailKey(input));
 
   // Dropped on both sides, as the service does with its own reads: a read that starts while the
@@ -191,7 +192,7 @@ export const make = Effect.gen(function* () {
         readonly cwd: string;
         readonly host: string;
         readonly repository: string;
-        readonly number: number;
+        readonly number: ChangeRequestNumber;
       },
       A,
       E,
@@ -236,7 +237,9 @@ export const make = Effect.gen(function* () {
         Effect.logWarning("GitLab merge request approval and pipeline read failed", {
           repository: input.repository,
           reason: error._tag,
-        }).pipe(Effect.as<ReadonlyMap<number, GitLabMergeRequestListState>>(new Map())),
+        }).pipe(
+          Effect.as<ReadonlyMap<ChangeRequestNumber, GitLabMergeRequestListState>>(new Map()),
+        ),
       ),
     );
 
@@ -246,7 +249,7 @@ export const make = Effect.gen(function* () {
       readonly cwd: string;
       readonly host: string;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     },
     detail = cli.getMergeRequestDetail(input),
   ) =>
@@ -683,9 +686,9 @@ export const make = Effect.gen(function* () {
   return provider;
 });
 
-function withListState<Item extends { readonly number: number }>(
+function withListState<Item extends { readonly number: ChangeRequestNumber }>(
   item: Item,
-  states: ReadonlyMap<number, GitLabMergeRequestListState>,
+  states: ReadonlyMap<ChangeRequestNumber, GitLabMergeRequestListState>,
 ): Item & Partial<GitLabMergeRequestListState> {
   const state = states.get(item.number);
   return state === undefined ? item : { ...item, ...state };

@@ -7,6 +7,7 @@ const comment = {
   position: { kind: "deleted" as const, oldLine: 9 },
   body: "Keep this",
   headSha: "abc",
+  reviewRevision: { headOid: "abc", baseOid: "base" },
   code: "old line",
 };
 const draft: ReviewDraft = {
@@ -22,6 +23,7 @@ describe("mobile review draft recovery", () => {
       comments: [
         { ...comment, body: "New feedback" },
         { ...comment, id: "two" },
+        { ...comment, reviewRevision: { headOid: "abc", baseOid: "new-base" } },
       ],
     };
     expect(clearSubmittedReview(current, draft)).toEqual(current);

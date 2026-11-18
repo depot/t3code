@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   parsePullRequestAnchor,
   pullRequestAnchorMatchesUrl,
@@ -121,7 +122,7 @@ export function resolvePullRequestPrimaryControl(input: {
 
 export function pullRequestCheckoutCommand(
   provider: SourceControlProviderKind,
-  number: number,
+  number: ChangeRequestNumber,
   headBranch: string,
   headRepositoryNameWithOwner?: string | null,
   repositoryUrl?: string | null,
@@ -194,7 +195,7 @@ export function pullRequestPanelContext(
     readonly projectId: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   },
 ): "page" | "thread" {
   if (thread.projectId !== surface.projectId) return "page";
@@ -918,7 +919,7 @@ function terminologyForUrl(url: string): ChangeRequestTerminology {
 
 function reviewThreadContext(
   thread: PullRequestReviewThread,
-  pullRequestNumber: number,
+  pullRequestNumber: ChangeRequestNumber,
 ): ReviewCommentContext {
   const lineIndex = Math.max(0, (thread.line ?? 1) - 1);
   return {
@@ -1012,7 +1013,7 @@ export function appendHandoff(
 
 /** Review bodies and check output are attacker-controlled on public repositories. */
 export function buildFixFindingsHandoff(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1122,7 +1123,7 @@ export function pullRequestFindingKey(finding: PullRequestFinding): string {
 }
 
 export function buildFixFindingHandoff(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1170,7 +1171,7 @@ export function buildFixFindingHandoff(input: {
 }
 
 export function buildResolveConflictsPrompt(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
   readonly headBranch: string;
   readonly baseBranch: string;
@@ -1191,7 +1192,7 @@ export function buildResolveConflictsPrompt(input: {
 
 function pullRequestContextComment(
   input: {
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly title: string;
     readonly url: string;
     readonly headBranch: string;
@@ -1258,7 +1259,7 @@ export type PullRequestChatSubject = Extract<PullRequestFinding, { kind: "thread
  * URL because host ids are only unique within a repository. Null when there are no words in it.
  */
 export function buildPullRequestCommentContext(
-  pullRequest: { readonly number: number; readonly url: string },
+  pullRequest: { readonly number: ChangeRequestNumber; readonly url: string },
   subject: PullRequestChatSubject,
 ): ReviewCommentContext | null {
   const pullRequestNumber = pullRequest.number;
@@ -1294,7 +1295,7 @@ const ANSWER_INSTRUCTIONS = [
 ];
 
 export function buildAskAboutPullRequestHandoff(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1309,7 +1310,7 @@ export function buildAskAboutPullRequestHandoff(input: {
 }
 
 export function buildExplainPullRequestHandoff(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1330,7 +1331,7 @@ export function buildExplainPullRequestHandoff(input: {
 }
 
 export function buildAddSelectionToAgentHandoff(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1347,7 +1348,7 @@ export function buildAddSelectionToAgentHandoff(input: {
 }
 
 export function buildAskAboutGuideStopHandoff(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1475,6 +1476,7 @@ export function resolveBaseFreshness(detail: {
 }
 
 const ACTION_NEEDS_HOST_REFRESH: Record<PullRequestAction, boolean> = {
+  "withdraw-approval": true,
   "update-branch": true,
   merge: false,
   ready: false,
@@ -1521,7 +1523,7 @@ interface PullRequestDetailSnapshotRef {
   readonly host?: string | undefined;
   readonly projectId: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
 }
 
 const pullRequestDetailSnapshotKey = (

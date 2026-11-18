@@ -30,6 +30,20 @@ export const TrimmedNonEmptyString = TrimmedString.check(isNonBlank);
 
 export const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 export const PositiveInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(1));
+// Keep numeric forge identifiers compatible while admitting native opaque merge-request IDs.
+export const ChangeRequestNumber = Schema.Union([
+  PositiveInt,
+  Schema.String.check(Schema.isPattern(/^[a-z][a-z0-9_-]{0,127}$/u)),
+]);
+export type ChangeRequestNumber = typeof ChangeRequestNumber.Type;
+
+export const isChangeRequestNumber = Schema.is(ChangeRequestNumber);
+
+export function parseChangeRequestNumber(value: unknown): ChangeRequestNumber | null {
+  const candidate = typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : value;
+  return isChangeRequestNumber(candidate) ? candidate : null;
+}
+
 export const PortSchema = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 65535 }));
 
 export const DpopFailureReason = Schema.Literals([

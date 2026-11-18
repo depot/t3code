@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import { resolvePullRequestDetailChecks } from "@t3tools/client-runtime/pull-request-checks";
 import { pullRequestPendingEditsFor } from "@t3tools/client-runtime/state/pull-requests";
@@ -30,7 +31,7 @@ import {
 export function pullRequestPanelReference(target: {
   readonly projectId: ProjectId;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly host?: string | undefined;
 }): PullRequestRef {
   return {

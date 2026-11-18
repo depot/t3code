@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   type PullRequestAction,
   type PullRequestReviewVerdict,
@@ -27,7 +28,7 @@ import * as SchemaTransformation from "effect/SchemaTransformation";
 export interface ChangeRequestLink {
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly authority?: string;
 }
 
@@ -58,7 +59,7 @@ export interface ChangeRequestTerminology {
 export interface ChangeRequestUrlInput {
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly remoteUrl?: string | undefined;
   /** The repository's browser URL; when given, the result is this plus the host's route. */
   readonly webUrl?: string | undefined;
@@ -94,7 +95,7 @@ export interface GitRemoteHost {
 }
 
 export interface ChangeRequestCheckoutInput {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly headBranch: string;
   readonly headRepositoryNameWithOwner?: string | null | undefined;
   readonly repositoryUrl?: string | null | undefined;
@@ -330,9 +331,12 @@ export interface SourceControlDefinition {
   readonly checkoutChangeRequestHost: (identity: ChangeRequestProjectIdentity) => string | null;
   /**
    * The ref the target repository publishes change request `number`'s head under, which names the
-   * head even when it lives in a fork. Absent for a host that publishes none.
+   * head even when it lives in a fork, or the recorded head SHA for hosts without MR refs.
    */
-  readonly changeRequestHeadRef?: (number: number) => string;
+  readonly changeRequestHeadRef?: (
+    number: ChangeRequestNumber,
+    headSha?: string,
+  ) => string | undefined;
   /** Null when this host does not claim the remote. Asked in the registry's recognition order. */
   readonly recognizeRemote: (remote: GitRemoteHost) => SourceControlProviderInfo | null;
   /** The host change requests in the project are listed and keyed under. */

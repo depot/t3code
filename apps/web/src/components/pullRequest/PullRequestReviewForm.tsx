@@ -1,3 +1,4 @@
+import { submitPullRequestReview } from "@t3tools/client-runtime/submit-pull-request-review";
 import { useAtomCommand } from "~/state/use-atom-command";
 import { capitalizeTerm } from "@t3tools/client-runtime/source-control-clients";
 import type { EnvironmentId, PullRequestRef, PullRequestReviewVerdict } from "@t3tools/contracts";
@@ -53,6 +54,9 @@ export function PullRequestReviewForm({
   environmentId,
   active,
   reference,
+  headOid,
+  summarySupported = true,
+  batchSupported = true,
   completionScope,
   term,
   verdicts,
@@ -66,6 +70,9 @@ export function PullRequestReviewForm({
   /** False while the form stays mounted but hidden; dictation is cancelled then. */
   active: boolean;
   reference: PullRequestRef;
+  headOid: string;
+  summarySupported?: boolean;
+  batchSupported?: boolean;
   completionScope: PullRequestCompletionScope | null;
   /** The host's word for a change request, as in "pull request". */
   term: string;
@@ -89,7 +96,7 @@ export function PullRequestReviewForm({
     text: body,
     textareaRef,
     onTextChange: (text) => setSummary(reviewKey, text),
-    disabled: !active || pending,
+    disabled: !active || pending || !summarySupported,
   });
   const { cancel } = speech;
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- discards a recording when the hidden form can no longer be submitted
@@ -110,33 +117,46 @@ export function PullRequestReviewForm({
     if (pending || !canSubmit(verdict.value, text, submittedComments.length)) return;
     const submittedBody = text;
     onPendingChange(true);
-    const result = await submitReview({
-      environmentId,
-      input: {
-        ...reference,
-        verdict: verdict.value,
-        body: submittedBody,
-        comments: submittedComments,
-      },
-    });
-    onPendingChange(false);
-    if (result._tag === "Failure") {
+    try {
+      await submitPullRequestReview({
+        review: {
+          verdict: verdict.value,
+          body: summarySupported ? submittedBody : "",
+          comments: submittedComments,
+        },
+        batch: batchSupported,
+        submit: async (review) => {
+          const result = await submitReview({
+            environmentId,
+            input: {
+              ...reference,
+              expectedHeadOid: headOid,
+              ...review,
+            },
+          });
+          if (result._tag === "Failure") throw squashAtomCommandFailure(result);
+        },
+        onSubmitted: (review) => {
+          removeComments(
+            reviewKey,
+            review.comments.map((comment) => comment.id),
+          );
+          if (summarySupported && review.body) clearSummary(reviewKey, review.body);
+        },
+      });
+    } catch (error) {
       toastManager.add({
         type: "error",
         title: "The review could not be submitted",
         description: readableFailure(
-          squashAtomCommandFailure(result),
-          "The host refused the review. Your draft is still here to try again.",
+          error,
+          "The host refused the review. Unsent feedback is still here to try again.",
         ),
       });
+      onPendingChange(false);
       return;
     }
-    // Preserve comments and summary edits made during submission.
-    removeComments(
-      reviewKey,
-      submittedComments.map((comment) => comment.id),
-    );
-    clearSummary(reviewKey, submittedBody);
+    onPendingChange(false);
     toastManager.add({ type: "success", title: verdict.sent(term) });
     onSubmitted();
   };
@@ -155,29 +175,33 @@ export function PullRequestReviewForm({
 
   return (
     <>
-      <PullRequestMarkdownTextarea
-        ref={textareaRef}
-        completionScope={completionScope}
-        rows={3}
-        readOnly={speech.freezesEditor}
-        value={body}
-        placeholder={placeholder}
-        aria-label="Review summary"
-        onValueChange={(next) => setSummary(reviewKey, next)}
-        onKeyDown={(event) => {
-          if (event.nativeEvent.isComposing || event.keyCode === 229 || event.repeat) return;
-          if (
-            selectedVerdict !== undefined &&
-            isCommentSubmitShortcut(event, body, pending || speech.preparing, true)
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            speech.submitAfterDictation((text) => void submit(selectedVerdict, text));
-          }
-        }}
-      />
+      {summarySupported ? (
+        <PullRequestMarkdownTextarea
+          ref={textareaRef}
+          completionScope={completionScope}
+          rows={3}
+          readOnly={speech.freezesEditor}
+          value={body}
+          placeholder={placeholder}
+          aria-label="Review summary"
+          onValueChange={(next) => setSummary(reviewKey, next)}
+          onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing || event.keyCode === 229 || event.repeat) return;
+            if (
+              selectedVerdict !== undefined &&
+              isCommentSubmitShortcut(event, body, pending || speech.preparing, true)
+            ) {
+              event.preventDefault();
+              event.stopPropagation();
+              speech.submitAfterDictation((text) => void submit(selectedVerdict, text));
+            }
+          }}
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground">Approve revision {headOid.slice(0, 7)}.</p>
+      )}
       <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-        <TextFieldSpeechControls speech={speech} disabled={pending} />
+        {summarySupported ? <TextFieldSpeechControls speech={speech} disabled={pending} /> : null}
         {offered.length > 1 ? (
           <Select
             value={selectedVerdict?.value ?? null}
@@ -213,8 +237,10 @@ export function PullRequestReviewForm({
             (!canSubmit(selectedVerdict.value, body, comments.length) && !speech.blocksSubmission)
           }
           onClick={() => {
-            if (selectedVerdict !== undefined)
+            if (selectedVerdict === undefined) return;
+            if (summarySupported)
               speech.submitAfterDictation((text) => void submit(selectedVerdict, text));
+            else void submit(selectedVerdict, "");
           }}
         >
           {pending ? "Submitting..." : "Submit review"}

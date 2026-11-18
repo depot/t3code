@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
 import type {
   PullRequestSummary,
@@ -20,7 +21,7 @@ import {
 export type ThreadPr = NonNullable<VcsStatusResult["pr"]>;
 
 export interface ThreadPrPresentation {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly state: ThreadPr["state"] | null;
   readonly kind: "pull-request" | "stack";
   readonly others: number;

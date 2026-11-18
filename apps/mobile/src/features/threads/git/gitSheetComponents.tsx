@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { SymbolView } from "../../../components/ui/AppSymbol";
 import type { ComponentProps } from "react";
@@ -33,7 +34,7 @@ export function statusSummary(
     readonly workingTree?: { readonly files: readonly { readonly path: string }[] };
     readonly aheadCount?: number;
     readonly behindCount?: number;
-    readonly pr?: { readonly state?: string; readonly number?: number } | null;
+    readonly pr?: { readonly state?: string; readonly number?: ChangeRequestNumber } | null;
     readonly sourceControlProvider?: { readonly kind: string } | null;
   } | null,
 ): string {

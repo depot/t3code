@@ -77,6 +77,7 @@ export function usePullRequestDefaultMergeMethodResolver(
 }
 
 const actionSuccessLabels = (term: string): Record<PullRequestAction, string> => ({
+  "withdraw-approval": "Approval withdrawn",
   merge: "Merge requested",
   ready: "Marked ready for review",
   draft: "Converted to draft",
@@ -91,6 +92,7 @@ const actionSuccessLabels = (term: string): Record<PullRequestAction, string> =>
 });
 
 const actionFailureLabels = (term: string): Record<PullRequestAction, string> => ({
+  "withdraw-approval": "Could not withdraw your approval",
   merge: `Could not merge this ${term}`,
   ready: "Could not mark this ready for review",
   draft: "Could not convert this to a draft",
@@ -105,6 +107,8 @@ const actionFailureLabels = (term: string): Record<PullRequestAction, string> =>
 });
 
 const actionFailureHints = (term: string): Record<PullRequestAction, string> => ({
+  "withdraw-approval":
+    "The host refused it. Check that you have an approval on this change request.",
   merge:
     "The host refused the merge. Check that you have write access, that the checks it requires have passed, and that the branch is not conflicting.",
   ready: "The host refused it. Check that you have write access to this repository.",

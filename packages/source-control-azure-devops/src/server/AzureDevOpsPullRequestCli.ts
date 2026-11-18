@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -73,7 +74,7 @@ export class AzureDevOpsPullRequestIncompleteError extends Schema.TaggedError<Az
   {
     command: Schema.Literal("az"),
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
   },
 ) {
   get detail(): string {
@@ -170,12 +171,12 @@ export class AzureDevOpsPullRequestCli extends Context.Service<
 
     readonly getPullRequest: (input: {
       readonly cwd: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<AzureDevOpsPullRequest, AzureDevOpsPullRequestCliError>;
 
     readonly listPolicyChecks: (input: {
       readonly cwd: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       /** Azure holds builds back on a draft, which reads the same as a build about to start. */
       readonly isDraft: boolean;
     }) => Effect.Effect<ReadonlyArray<PullRequestCheck>, AzureDevOpsPullRequestCliError>;
@@ -183,20 +184,20 @@ export class AzureDevOpsPullRequestCli extends Context.Service<
     readonly listThreads: (input: {
       readonly cwd: string;
       readonly location: AzureDevOpsRepositoryLocation;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ReadonlyArray<PullRequestComment>, AzureDevOpsPullRequestCliError>;
 
     readonly listIterations: (input: {
       readonly cwd: string;
       readonly location: AzureDevOpsRepositoryLocation;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ReadonlyArray<AzureDevOpsIteration>, AzureDevOpsPullRequestCliError>;
 
     /** Changes cover the whole PR from its merge base. */
     readonly listIterationChanges: (input: {
       readonly cwd: string;
       readonly location: AzureDevOpsRepositoryLocation;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly iterationId: number;
     }) => Effect.Effect<AzureDevOpsIterationChanges, AzureDevOpsPullRequestCliError>;
 
@@ -222,21 +223,21 @@ export class AzureDevOpsPullRequestCli extends Context.Service<
 
     readonly runPullRequestAction: (input: {
       readonly cwd: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly action: PullRequestAction;
       readonly mergeMethod?: PullRequestMergeMethod;
     }) => Effect.Effect<AzureDevOpsPullRequest | void, AzureDevOpsPullRequestCliError>;
 
     readonly updatePullRequest: (input: {
       readonly cwd: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly title?: string | undefined;
       readonly body?: string | undefined;
     }) => Effect.Effect<void, AzureDevOpsPullRequestCliError>;
 
     readonly setPullRequestReviewers: (input: {
       readonly cwd: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly reviewers: ReadonlyArray<string>;
       readonly requested: boolean;
     }) => Effect.Effect<void, AzureDevOpsPullRequestCliError>;
@@ -299,6 +300,7 @@ function actionArgs(
       return ["--status", "active"];
     case "revert":
     case "approve-workflows":
+    case "withdraw-approval":
     case "delete-branch":
       throw new Error(`Azure DevOps pull request action ${action} is unsupported`);
   }
@@ -382,7 +384,7 @@ export const make = Effect.gen(function* () {
 
   const pullRequestRoute = (input: {
     readonly location: AzureDevOpsRepositoryLocation;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }): ReadonlyArray<string> => [
     ...repositoryRoute(input.location),
     `pullRequestId=${input.number}`,

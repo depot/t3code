@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { ChangeRequestTerminology } from "@t3tools/client-runtime/source-control-clients";
 import {
   EnvironmentId,
@@ -24,7 +25,7 @@ export type PullRequestParams = {
   readonly environmentId: string;
   readonly projectId: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly host?: string;
   readonly navigationUrl?: string;
   readonly navigationId?: number;
@@ -204,6 +205,14 @@ export function usePullRequestDiff(
   };
   return {
     ...query,
+    reviewRevision: pages.every((page) => {
+      const revision = page.result.reviewRevision;
+      const first = pages[0]?.result.reviewRevision;
+      if (!revision || !first) return revision === first;
+      return revision.headOid === first.headOid && revision.baseOid === first.baseOid;
+    })
+      ? pages[0]?.result.reviewRevision
+      : undefined,
     refresh,
     parsed,
     loadWithheldFile,

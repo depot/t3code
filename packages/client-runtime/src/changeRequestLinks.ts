@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type {
   EnvironmentId,
   ProjectId,
@@ -71,7 +72,7 @@ export function resolveChangeRequestLinkTarget<Project extends ChangeRequestProj
 }): {
   readonly project: Project;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly host?: string;
 } | null {
   const link = sourceControlClients.parseChangeRequestUrl(url)?.link;
@@ -134,7 +135,7 @@ export function resolvePullRequestPreviewTarget({
 export function projectChangeRequestUrl(
   identity: RepositoryIdentity | null | undefined,
   repository: string,
-  number: number,
+  number: ChangeRequestNumber,
 ): string | null {
   if (identity?.provider === undefined) return null;
   const [host, ...path] = identity.canonicalKey.split("/");

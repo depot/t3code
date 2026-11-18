@@ -1,13 +1,8 @@
+import { ChangeRequestNumber } from "./baseSchemas.ts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
-import {
-  IsoDateTime,
-  NonNegativeInt,
-  PositiveInt,
-  ProjectId,
-  TrimmedNonEmptyString,
-} from "./baseSchemas.ts";
+import { IsoDateTime, NonNegativeInt, ProjectId, TrimmedNonEmptyString } from "./baseSchemas.ts";
 import {
   PullRequestActor,
   PullRequestChecksState,
@@ -19,7 +14,7 @@ import {
 export const ThreadLinkedPullRequest = Schema.Struct({
   projectId: ProjectId,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   url: TrimmedNonEmptyString,
 });
 export type ThreadLinkedPullRequest = typeof ThreadLinkedPullRequest.Type;
@@ -56,7 +51,7 @@ export const ThreadPullRequestSnapshot = Schema.Struct({
 export type ThreadPullRequestSnapshot = typeof ThreadPullRequestSnapshot.Type;
 
 export const ThreadPullRequestStackLayer = Schema.Struct({
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   headBranch: TrimmedNonEmptyString,
   state: PullRequestState,
 });
@@ -66,7 +61,7 @@ export type ThreadPullRequestStackLayer = typeof ThreadPullRequestStackLayer.Typ
 export const ThreadPullRequestStack = Schema.Struct({
   kind: Schema.Literal("native"),
   id: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   url: TrimmedNonEmptyString,
   base: TrimmedNonEmptyString,
   layers: Schema.Array(ThreadPullRequestStackLayer),
@@ -76,7 +71,7 @@ export type ThreadPullRequestStack = typeof ThreadPullRequestStack.Type;
 export const ThreadPullRequestKey = Schema.Struct({
   host: TrimmedNonEmptyString,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
 });
 export type ThreadPullRequestKey = typeof ThreadPullRequestKey.Type;
 

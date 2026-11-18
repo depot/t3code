@@ -68,7 +68,9 @@ export function PullRequestDiffStats(props: {
   readonly additions: number;
   readonly deletions: number;
   readonly compact?: boolean;
+  readonly statsIncomplete?: boolean;
 }) {
+  if (props.statsIncomplete) return <Text textRole="caption">Line counts unavailable</Text>;
   const textSize = props.compact ? "text-2xs" : "text-xs";
   return (
     <View className="shrink-0 flex-row items-center gap-2">

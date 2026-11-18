@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   EnvironmentAuthInvalidError,
   type PullRequestDiffInput,
@@ -22,7 +23,7 @@ export class PullRequestDiffCredentialRejectedError extends Schema.TaggedError<P
   "PullRequestDiffCredentialRejectedError",
   {
     repository: Schema.String,
-    number: Schema.Number,
+    number: ChangeRequestNumber,
     traceId: Schema.String,
     cause: EnvironmentAuthInvalidError,
   },

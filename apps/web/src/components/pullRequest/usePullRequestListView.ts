@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { parsePullRequestQuery } from "@t3tools/client-runtime/pull-request-query";
@@ -49,7 +50,7 @@ export interface PullRequestsSearch extends PullRequestListPreferences {
   readonly projectId?: ProjectId;
   readonly host?: string;
   readonly repository?: string;
-  readonly number?: number;
+  readonly number?: ChangeRequestNumber;
   readonly selectedProjectId?: ProjectId;
   readonly selectedHost?: string;
   readonly selectedEnvironmentId?: EnvironmentId;

@@ -1,3 +1,4 @@
+import { submitPullRequestReview } from "@t3tools/client-runtime/submit-pull-request-review";
 import { AsyncResult } from "effect/reactivity";
 import { useAtomRefresh } from "@effect/atom-react";
 import { StackActions, useNavigation, type StaticScreenProps } from "@react-navigation/native";
@@ -95,6 +96,7 @@ export function PullRequestReviewSheet({
   const offered = VERDICTS.filter((option) => permissions.verdicts.includes(option.value));
   const verdict = offered.find((option) => option.value === requestedVerdict) ?? offered[0];
   const reviewing = params.mode === "review";
+  const summarySupported = !reviewing || result.data?.capabilities.review.summary !== false;
   const canSubmitComments = !store.draft.comments.length || permissions.canInlineComment;
   // Forgejo requires a summary when requesting changes, even with inline comments.
   const summaryRequired =
@@ -117,27 +119,48 @@ export function PullRequestReviewSheet({
       if (!canSubmit)
         throw new Error("Add your feedback and check your permissions before submitting.");
       const submitted = store.draft;
-      const response =
-        reviewing && verdict
-          ? await review({
+      if (reviewing && verdict) {
+        await submitPullRequestReview({
+          batch: result.data?.capabilities.review.batch !== false,
+          review: {
+            verdict: verdict.value,
+            body: summarySupported ? body : "",
+            comments: submitted.comments,
+          },
+          submit: async (step) => {
+            const response = await review({
               ...target,
               input: {
                 ...target.input,
-                verdict: verdict.value,
-                body,
-                comments: submitted.comments.map(
-                  ({ id: _id, headSha: _sha, code: _code, ...comment }) => comment,
+                ...(result.data?.headSha ? { expectedHeadOid: result.data.headSha } : {}),
+                ...step,
+                comments: step.comments.map(
+                  ({ id: _id, headSha: _sha, code: _code, ...draft }) => draft,
                 ),
               },
-            })
-          : await comment({ ...target, input: { ...target.input, body } });
-      if (response._tag === "Failure") throw squashAtomCommandFailure(response);
-      store.update((current) =>
-        reviewing
-          ? clearSubmittedReview(current, submitted)
-          : { ...current, comment: current.comment === submitted.comment ? "" : current.comment },
-      );
-      await store.flush();
+            });
+            if (response._tag === "Failure") throw squashAtomCommandFailure(response);
+          },
+          onSubmitted: async (step) => {
+            store.update((current) =>
+              clearSubmittedReview(current, {
+                ...submitted,
+                summary: step.body,
+                comments: step.comments,
+              }),
+            );
+            await store.flush();
+          },
+        });
+      } else {
+        const response = await comment({ ...target, input: { ...target.input, body } });
+        if (response._tag === "Failure") throw squashAtomCommandFailure(response);
+        store.update((current) => ({
+          ...current,
+          comment: current.comment === submitted.comment ? "" : current.comment,
+        }));
+        await store.flush();
+      }
     });
   return (
     <SheetContent
@@ -175,31 +198,35 @@ export function PullRequestReviewSheet({
           size="compact"
         />
       ) : null}
-      <Text className="px-4 text-xs text-foreground-muted">
-        {reviewing ? "Summary" : "Comment"}
-      </Text>
-      <PullRequestCompletionSuggestions completions={completions} />
-      <TextInput
-        multiline
-        selection={completions.selection}
-        onSelectionChange={completions.onSelectionChange}
-        onBlur={completions.onBlur}
-        accessibilityLabel={reviewing ? "Review summary" : "Comment"}
-        placeholder={
-          reviewing
-            ? summaryRequired
-              ? "Summary required to request changes…"
-              : "Summarize your review…"
-            : "Write a comment…"
-        }
-        placeholderTextColorClassName="accent-foreground-muted"
-        editable={store.ready && !submission.busy}
-        value={body}
-        maxLength={65536}
-        onChangeText={setBody}
-        className="min-h-36 rounded-[20px] bg-grouped-card p-4 text-base text-foreground"
-        style={{ textAlignVertical: "top" }}
-      />
+      {summarySupported ? (
+        <>
+          <Text className="px-4 text-xs text-foreground-muted">
+            {reviewing ? "Summary" : "Comment"}
+          </Text>
+          <PullRequestCompletionSuggestions completions={completions} />
+          <TextInput
+            multiline
+            selection={completions.selection}
+            onSelectionChange={completions.onSelectionChange}
+            onBlur={completions.onBlur}
+            accessibilityLabel={reviewing ? "Review summary" : "Comment"}
+            placeholder={
+              reviewing
+                ? summaryRequired
+                  ? "Summary required to request changes…"
+                  : "Summarize your review…"
+                : "Write a comment…"
+            }
+            placeholderTextColorClassName="accent-foreground-muted"
+            editable={store.ready && !submission.busy}
+            value={body}
+            maxLength={65536}
+            onChangeText={setBody}
+            className="min-h-36 rounded-[20px] bg-grouped-card p-4 text-base text-foreground"
+            style={{ textAlignVertical: "top" }}
+          />
+        </>
+      ) : null}
       {reviewing && store.draft.comments.length ? (
         <View className="gap-2">
           <Text className="text-sm font-t3-medium">

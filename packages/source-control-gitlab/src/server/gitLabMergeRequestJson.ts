@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { trimOptionalString as trimmed } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as Cause from "effect/Cause";
 import * as Exit from "effect/Exit";
@@ -200,7 +201,7 @@ const RawProjectMergeSettingsSchema = Schema.Struct({
 });
 
 export interface GitLabMergeRequestListItem {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly author: PullRequestActor | null;

@@ -64,6 +64,8 @@ export function retainPullRequestDiffPage(
     previous === result ||
     (previous?.patch === result.patch &&
       previous.truncated === result.truncated &&
+      previous.reviewRevision?.headOid === result.reviewRevision?.headOid &&
+      previous.reviewRevision?.baseOid === result.reviewRevision?.baseOid &&
       previous.nextCursor === result.nextCursor &&
       previous.withheldFilesReadable === result.withheldFilesReadable &&
       JSON.stringify(previous.omittedFileStats ?? []) ===
@@ -92,6 +94,7 @@ export function combinePullRequestDiffPages(
         if (!stat) return file;
         return {
           ...file,
+          statsIncomplete: stat.statsIncomplete,
           additions: stat.additions,
           deletions: stat.deletions,
           ...(file.rows.length === 0 ? { withheld: true } : {}),

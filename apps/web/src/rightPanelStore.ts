@@ -1,3 +1,4 @@
+import { isChangeRequestNumber, type ChangeRequestNumber } from "@t3tools/contracts";
 import {
   parseScopedThreadKey,
   scopedThreadKey,
@@ -71,7 +72,7 @@ export type RightPanelSurface =
       projectId: string;
       host?: string;
       repository: string;
-      number: number;
+      number: ChangeRequestNumber;
       url?: string;
       /** A clicked link waiting for the panel to show where it points; cleared once shown. */
       revealUrl?: string;
@@ -148,7 +149,7 @@ interface RightPanelStoreState {
       projectId: string;
       host?: string;
       repository: string;
-      number: number;
+      number: ChangeRequestNumber;
       url?: string;
       /** A clicked link to reveal; reopening a surface passes only its `url`. */
       revealUrl?: string;
@@ -269,7 +270,7 @@ export function pullRequestSurfaceId(target: {
   projectId: string;
   host?: string;
   repository: string;
-  number: number;
+  number: ChangeRequestNumber;
 }): PullRequestSurface["id"] {
   const scope =
     target.environmentId === undefined ? "" : `${encodeURIComponent(target.environmentId)}:`;
@@ -282,7 +283,7 @@ export function pullRequestSurface(target: {
   projectId: string;
   host?: string;
   repository: string;
-  number: number;
+  number: ChangeRequestNumber;
   url?: string;
   detailTab?: PullRequestDetailTab;
 }): PullRequestSurface {
@@ -529,9 +530,7 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
                       if (
                         typeof surface.projectId !== "string" ||
                         typeof surface.repository !== "string" ||
-                        typeof surface.number !== "number" ||
-                        !Number.isSafeInteger(surface.number) ||
-                        surface.number < 1
+                        !isChangeRequestNumber(surface.number)
                       ) {
                         return [];
                       }

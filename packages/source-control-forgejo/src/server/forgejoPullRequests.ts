@@ -42,7 +42,9 @@ export const ForgejoPullRequestSchema = Schema.Struct({
   merged_at: Schema.optional(Schema.NullOr(Schema.String)),
   updated_at: Schema.optional(Schema.OptionFromNullOr(Schema.DateTimeUtcFromString)),
 });
-export function toForgejoChangeRequest(raw: typeof ForgejoPullRequestSchema.Type): ChangeRequest {
+export function toForgejoChangeRequest(
+  raw: typeof ForgejoPullRequestSchema.Type,
+): ChangeRequest & { readonly number: number } {
   return {
     provider: SourceControlProviderKind.make("forgejo"),
     number: raw.number,

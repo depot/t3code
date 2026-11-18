@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   CommandId,
   type OrchestrationProjectShell,
@@ -262,7 +263,11 @@ const make = Effect.gen(function* () {
 
   const guideReference = (
     project: OrchestrationProjectShell,
-    target: { readonly host: string; readonly repository: string; readonly number: number },
+    target: {
+      readonly host: string;
+      readonly repository: string;
+      readonly number: ChangeRequestNumber;
+    },
   ) => ({
     projectId: project.id,
     host: target.host,

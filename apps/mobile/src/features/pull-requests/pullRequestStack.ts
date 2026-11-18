@@ -1,9 +1,10 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { ChangeRequestTerminology } from "@t3tools/client-runtime/source-control-clients";
 import type { PullRequestRef, PullRequestStack, ThreadPullRequestLink } from "@t3tools/contracts";
 
 export function pullRequestStackMerge(
   stack: PullRequestStack,
-  number: number,
+  number: ChangeRequestNumber,
   terminology: ChangeRequestTerminology,
 ) {
   const position = stack.layers.findIndex((layer) => layer.number === number);
@@ -70,7 +71,7 @@ export function savedPullRequestStack(
 /** The list summary describes the layer it was opened from, so another layer's route drops it. */
 export function pullRequestLayerParams<Params extends { readonly initialSummary?: unknown }>(
   params: Params,
-  number: number,
+  number: ChangeRequestNumber,
 ) {
   const { initialSummary: _, ...layer } = params;
   return { ...layer, number };

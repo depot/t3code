@@ -5605,6 +5605,77 @@ it.layer(layerGitManagerTest)("GitManager", (it) => {
       }),
   );
 
+  it.effect(
+    "prepares and reuses a Depot worktree at the recorded MR commit after its branch is reused",
+    () =>
+      Effect.gen(function* () {
+        const repoDir = yield* makeTempDir("t3code-git-manager-");
+        yield* initRepo(repoDir);
+        const remoteDir = yield* createBareRemote();
+        yield* runGit(repoDir, ["remote", "add", "origin", remoteDir]);
+        yield* runGit(repoDir, ["push", "-u", "origin", "main"]);
+        yield* runGit(repoDir, ["checkout", "-b", "feature/depot"]);
+        NodeFS.writeFileSync(NodePath.join(repoDir, "reviewed.txt"), "reviewed\n");
+        yield* runGit(repoDir, ["add", "reviewed.txt"]);
+        yield* runGit(repoDir, ["commit", "-m", "Reviewed head"]);
+        const headSha = (yield* runGit(repoDir, ["rev-parse", "HEAD"])).stdout.trim();
+        yield* runGit(repoDir, ["push", "origin", "feature/depot"]);
+        yield* runGit(repoDir, ["commit", "--allow-empty", "-m", "Reused branch"]);
+        yield* runGit(repoDir, ["push", "origin", "feature/depot"]);
+        yield* runGit(repoDir, ["checkout", "main"]);
+        yield* runGit(repoDir, ["branch", "-D", "feature/depot"]);
+        const { manager } = yield* makeManager({
+          providerScenario: {
+            kind: "depot",
+            pullRequest: {
+              number: "mr_abc",
+              title: "Depot MR",
+              url: "https://depot.dev/orgs/org1/code/repositories/repo1/merge-requests?id=mr_abc",
+              baseRefName: "main",
+              headRefName: "feature/depot",
+              headSha,
+              state: "merged",
+            },
+          },
+        });
+        const input = {
+          cwd: repoDir,
+          reference: "https://depot.dev/orgs/org1/code/repositories/repo1/merge-requests?id=mr_abc",
+          mode: "worktree" as const,
+        };
+        const { manager: unavailableManager } = yield* makeManager({
+          providerScenario: {
+            kind: "depot",
+            pullRequest: {
+              number: "mr_abc",
+              title: "Unavailable head",
+              url: input.reference,
+              baseRefName: "main",
+              headRefName: "feature/depot",
+              headSha: "f".repeat(40),
+              state: "open",
+            },
+          },
+        });
+        yield* Effect.flip(preparePullRequestThread(unavailableManager, input));
+        expect((yield* runGit(repoDir, ["branch", "--list", "feature/depot"])).stdout.trim()).toBe(
+          "",
+        );
+        const created = yield* preparePullRequestThread(manager, input);
+        expect(created.isOnPullRequestHead).toBe(true);
+        expect((yield* runGit(created.worktreePath!, ["rev-parse", "HEAD"])).stdout.trim()).toBe(
+          headSha,
+        );
+        yield* runGit(repoDir, ["push", "origin", "--delete", "feature/depot"]);
+        const reused = yield* preparePullRequestThread(manager, input);
+        expect(reused.worktreePath).toBe(created.worktreePath);
+        expect(reused.isOnPullRequestHead).toBe(true);
+        expect((yield* runGit(reused.worktreePath!, ["rev-parse", "HEAD"])).stdout.trim()).toBe(
+          headSha,
+        );
+      }),
+  );
+
   it.effect("prepares a worktree from the head branch when the host has no pull ref", () =>
     Effect.gen(function* () {
       const repoDir = yield* makeTempDir("t3code-git-manager-");

@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type {
   OrchestrationV2Notification,
   PullRequestCheck,
@@ -448,7 +449,7 @@ export function combinePullRequestWatchWakes(
 }
 
 export function pullRequestWatchMessage(input: {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
   readonly baseBranch: string;
   readonly headSha: string | null;

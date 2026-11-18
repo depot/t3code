@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { PullRequestListEntry, PullRequestSummary } from "@t3tools/contracts";
 import {
   ArrowLeftIcon,
@@ -96,7 +97,7 @@ export function PullRequestDetailGhost({
   checkoutCommand?: string | null;
   tabs?: ReadonlyArray<{ value: string; label: string }>;
   activeTab?: string;
-  number?: number;
+  number?: ChangeRequestNumber;
   onBack?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
   onCheckoutError?: ((error: Error) => void) | undefined;

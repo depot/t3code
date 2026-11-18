@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as NodeV8 from "node:v8";
 
 import { SourceControlProviderKind } from "@t3tools/contracts";
@@ -100,7 +101,7 @@ function makeThread(
 }
 
 function makeLink(
-  number: number,
+  number: ChangeRequestNumber,
   snapshot: Partial<ThreadPullRequestSnapshot> | null = null,
   overrides: Partial<ThreadPullRequestLink> = {},
 ): ThreadPullRequestLink {
@@ -414,7 +415,7 @@ function applySync(
   };
 }
 
-const stackLayer = (number: number) => ({
+const stackLayer = (number: ChangeRequestNumber) => ({
   number,
   headBranch: `layer-${number}`,
   state: "open" as const,
@@ -426,8 +427,11 @@ const stackLayer = (number: number) => ({
  */
 function makeGrowingStack() {
   let layers = [stackLayer(18), stackLayer(20)];
-  const entries = new Map<number, { readonly layers: typeof layers; expiresAt: number }>();
-  const invalidated: Array<number> = [];
+  const entries = new Map<
+    ChangeRequestNumber,
+    { readonly layers: typeof layers; expiresAt: number }
+  >();
+  const invalidated: Array<ChangeRequestNumber> = [];
   const stackOf = (stackLayers: typeof layers): PullRequestStack => ({
     id: "stack-80",
     number: 80,
@@ -489,7 +493,7 @@ const storedStackLayers = (fixture: Harness) =>
 const requestAndApply = Effect.fn("requestPullRequestSyncHarness")(function* (
   fixture: Harness,
   reactor: PullRequestSyncReactor.PullRequestSyncReactor["Service"],
-  number: number,
+  number: ChangeRequestNumber,
 ) {
   yield* reactor.requestSync({ host: "github.com", repository: "owner/repository", number });
   yield* Queue.take(fixture.snapshotReads);
@@ -1049,7 +1053,7 @@ describe("PullRequestSyncReactor", () => {
   it.effect("re-reads a merged pull request until the host supplies its merge time", () =>
     Effect.gen(function* () {
       yield* TestClock.setTime(Date.parse(NOW));
-      const invalidated = yield* Ref.make<ReadonlyArray<number>>([]);
+      const invalidated = yield* Ref.make<ReadonlyArray<ChangeRequestNumber>>([]);
       const fixture = yield* makeHarness({
         snapshot: makeSnapshot([
           makeThread("merged", { pullRequests: [makeLink(1, { state: "merged" })] }),
@@ -1079,7 +1083,7 @@ describe("PullRequestSyncReactor", () => {
     Effect.gen(function* () {
       yield* TestClock.setTime(Date.parse(NOW));
       const state = yield* Ref.make<PullRequestSummary["state"]>("open");
-      const invalidated = yield* Ref.make<ReadonlyArray<number>>([]);
+      const invalidated = yield* Ref.make<ReadonlyArray<ChangeRequestNumber>>([]);
       const fixture = yield* makeHarness({
         snapshot: makeSnapshot([
           makeThread("agent", { pullRequests: [makeLink(7, { state: "open" })] }),
@@ -1121,7 +1125,7 @@ describe("PullRequestSyncReactor", () => {
       Effect.gen(function* () {
         yield* TestClock.setTime(Date.parse(NOW));
         const draft = yield* Ref.make(!isDraft);
-        const invalidated = yield* Ref.make<ReadonlyArray<number>>([]);
+        const invalidated = yield* Ref.make<ReadonlyArray<ChangeRequestNumber>>([]);
         const fixture = yield* makeHarness({
           snapshot: makeSnapshot([
             makeThread("agent", { pullRequests: [makeLink(7, { isDraft: !isDraft })] }),
@@ -1216,7 +1220,7 @@ describe("PullRequestSyncReactor", () => {
             ),
           ),
         );
-        const request = (number: number) =>
+        const request = (number: ChangeRequestNumber) =>
           reactor.requestSync({ host: "github.com", repository: "owner/repository", number });
         yield* request(1);
         yield* Deferred.await(reading);
@@ -1236,7 +1240,8 @@ describe("PullRequestSyncReactor", () => {
     Effect.gen(function* () {
       yield* TestClock.setTime(Date.parse(NOW));
       const numbers = Array.from({ length: 60 }, (_, index) => index + 1);
-      const hostOf = (number: number) => (number <= 30 ? "github.com" : "gitlab.example.com");
+      const hostOf = (number: ChangeRequestNumber) =>
+        Number(number) <= 30 ? "github.com" : "gitlab.example.com";
       const batches = (input: PullRequestRef) => input.host === "github.com";
       const batched = yield* Ref.make(0);
       const unbatched = yield* Ref.make(0);
@@ -1616,7 +1621,7 @@ describe("PullRequestSyncReactor", () => {
             base: "main",
             layers: [
               { number: input.number, headBranch: "layer-1", state: "open" },
-              { number: input.number + 1, headBranch: "layer-2", state: "open" },
+              { number: Number(input.number) + 1, headBranch: "layer-2", state: "open" },
             ],
           }),
       });
@@ -1701,7 +1706,7 @@ describe("PullRequestSyncReactor", () => {
           assert.deepStrictEqual(
             (yield* Ref.get(fixture.summaryCalls))
               .map((call) => call.number)
-              .toSorted((left, right) => left - right),
+              .toSorted((left, right) => Number(left) - Number(right)),
             [9, 9, 9, 9, 10, 10, 10, 10],
           );
         }).pipe(Effect.provide(fixture.layer));
@@ -1847,7 +1852,7 @@ describe("PullRequestSyncReactor", () => {
     Effect.gen(function* () {
       yield* TestClock.setTime(Date.parse(NOW));
       const state = yield* Ref.make<PullRequestSummary["state"]>("open");
-      const invalidated = yield* Ref.make<ReadonlyArray<number>>([]);
+      const invalidated = yield* Ref.make<ReadonlyArray<ChangeRequestNumber>>([]);
       const fixture = yield* makeHarness({
         snapshot: makeSnapshot([
           makeThread("agent", { pullRequests: [makeLink(7, { state: "open" })] }),

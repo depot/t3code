@@ -6,7 +6,7 @@ import * as Schema from "effect/Schema";
 import * as SqlClient from "effect/sql/SqlClient";
 import * as SqlSchema from "effect/sql/SqlSchema";
 
-import { SourceControlProviderKind } from "@t3tools/contracts";
+import { ChangeRequestNumber, SourceControlProviderKind } from "@t3tools/contracts";
 
 import {
   PersistenceDecodeError,
@@ -18,7 +18,7 @@ export const PullRequestFilesViewedScope = Schema.Struct({
   provider: SourceControlProviderKind,
   host: Schema.String,
   repository: Schema.String,
-  number: Schema.Int,
+  number: ChangeRequestNumber,
   viewer: Schema.String,
 });
 export type PullRequestFilesViewedScope = typeof PullRequestFilesViewedScope.Type;

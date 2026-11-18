@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "./baseSchemas.ts";
 import * as Schema from "effect/Schema";
 import * as Effect from "effect/Effect";
 import * as HttpServerRespondable from "effect/http/HttpServerRespondable";
@@ -75,6 +76,7 @@ export const PullRequestAction = Schema.Literals([
   "disable-auto-merge",
   "revert",
   "approve-workflows",
+  "withdraw-approval",
 ]);
 export type PullRequestAction = typeof PullRequestAction.Type;
 
@@ -253,6 +255,10 @@ export const PullRequestCommit = Schema.Struct({
 export type PullRequestCommit = typeof PullRequestCommit.Type;
 
 export const PullRequestReviewCapabilities = Schema.Struct({
+  /** False means each comment and verdict must be submitted separately. */
+  batch: Schema.optional(Schema.Boolean),
+  /** Absent means the host accepts a review summary. */
+  summary: Schema.optional(Schema.Boolean),
   inlineComment: Schema.Boolean,
   /**
    * An inline comment can cover a range of lines rather than its last one. Absent, as from a
@@ -349,7 +355,7 @@ export const PullRequestMergeCapabilities = Schema.Struct({
 export type PullRequestMergeCapabilities = typeof PullRequestMergeCapabilities.Type;
 
 export const PullRequestStackMembership = Schema.Struct({
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   position: PositiveInt,
   size: PositiveInt,
   base: TrimmedNonEmptyString,
@@ -363,7 +369,7 @@ export const PullRequestListEntry = Schema.Struct({
   projectId: ProjectId,
   projectTitle: TrimmedNonEmptyString,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyString,
   url: TrimmedNonEmptyString,
   author: Schema.NullOr(PullRequestActor),
@@ -447,7 +453,7 @@ export const PullRequestRef = Schema.Struct({
   expectedAccountId: Schema.optional(TrimmedNonEmptyString),
   allowStale: Schema.optional(Schema.Boolean),
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
 });
 export type PullRequestRef = typeof PullRequestRef.Type;
 
@@ -497,7 +503,7 @@ export type PullRequestLinkedThreadsResult = typeof PullRequestLinkedThreadsResu
 export const PullRequestPreview = Schema.Struct({
   projectId: ProjectId,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyString,
   url: TrimmedNonEmptyString,
   author: Schema.NullOr(PullRequestActor),
@@ -513,7 +519,7 @@ export const PullRequestSummary = Schema.Struct({
   provider: SourceControlProviderKind,
   projectId: ProjectId,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyString,
   url: TrimmedNonEmptyString,
   state: PullRequestState,
@@ -528,6 +534,7 @@ export const PullRequestSummary = Schema.Struct({
   additions: Schema.optional(NonNegativeInt),
   deletions: Schema.optional(NonNegativeInt),
   changedFiles: Schema.optional(NonNegativeInt),
+  statsIncomplete: Schema.optional(Schema.Boolean),
   reviewDecision: Schema.optional(Schema.NullOr(PullRequestReviewDecision)),
   checksState: Schema.optional(Schema.NullOr(PullRequestChecksState)),
   mergeability: Schema.optional(PullRequestMergeability),
@@ -543,12 +550,12 @@ export type PullRequestSummary = typeof PullRequestSummary.Type;
 
 export const PullRequestStack = Schema.Struct({
   id: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   url: TrimmedNonEmptyString,
   base: TrimmedNonEmptyString,
   layers: Schema.Array(
     Schema.Struct({
-      number: PositiveInt,
+      number: ChangeRequestNumber,
       title: Schema.optional(Schema.String),
       isDraft: Schema.optional(Schema.Boolean),
       headSha: Schema.optional(TrimmedNonEmptyString),
@@ -562,7 +569,7 @@ export type PullRequestStack = typeof PullRequestStack.Type;
 export const PullRequestDiffStat = Schema.Struct({
   projectId: ProjectId,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   additions: NonNegativeInt,
   deletions: NonNegativeInt,
 });
@@ -597,7 +604,7 @@ export type PullRequestFilterOptionsInput = typeof PullRequestFilterOptionsInput
 export const PullRequestReferenceCandidate = Schema.Struct({
   reference: TrimmedNonEmptyString,
   kind: Schema.Literals(["issue", "change-request"]),
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: Schema.String,
   state: Schema.Literals(["open", "closed", "merged"]),
 });
@@ -647,7 +654,7 @@ export const PullRequestDetail = Schema.Struct({
   projectTitle: TrimmedNonEmptyString,
   workspaceRoot: TrimmedNonEmptyString,
   repository: TrimmedNonEmptyString,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyString,
   body: Schema.String,
   url: TrimmedNonEmptyString,
@@ -659,6 +666,7 @@ export const PullRequestDetail = Schema.Struct({
   additions: NonNegativeInt,
   deletions: NonNegativeInt,
   changedFiles: NonNegativeInt,
+  statsIncomplete: Schema.optional(Schema.Boolean),
   headBranch: TrimmedNonEmptyString,
   headRepositoryNameWithOwner: Schema.optional(Schema.NullOr(TrimmedNonEmptyString)),
   headSha: Schema.optional(TrimmedNonEmptyString),
@@ -734,12 +742,21 @@ export type PullRequestDiffInput = typeof PullRequestDiffInput.Type;
 
 export const PullRequestOmittedFileStat = Schema.Struct({
   path: TrimmedNonEmptyString,
+  statsIncomplete: Schema.optional(Schema.Boolean),
   additions: Schema.Number,
   deletions: Schema.Number,
 });
 export type PullRequestOmittedFileStat = typeof PullRequestOmittedFileStat.Type;
 
+export const PullRequestReviewRevision = Schema.Struct({
+  headOid: TrimmedNonEmptyString,
+  /** Host anchor base, which can differ from the diff merge-base. */
+  baseOid: Schema.String,
+});
+export type PullRequestReviewRevision = typeof PullRequestReviewRevision.Type;
+
 export const PullRequestDiffResult = Schema.Struct({
+  reviewRevision: Schema.optional(PullRequestReviewRevision),
   patch: Schema.String,
   /** Content omitted within this slice; nextCursor separately indicates more slices. */
   truncated: Schema.Boolean,
@@ -825,14 +842,14 @@ export const PullRequestSetFilesViewedInput = Schema.Struct({
 export type PullRequestSetFilesViewedInput = typeof PullRequestSetFilesViewedInput.Type;
 
 export const PullRequestStackHead = Schema.Struct({
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   headSha: TrimmedNonEmptyString,
 });
 export type PullRequestStackHead = typeof PullRequestStackHead.Type;
 
 export const PullRequestActionInput = Schema.Struct({
   /** Native stack scope; only send to environments advertising pullRequestStackActions. */
-  stackNumber: Schema.optional(PositiveInt),
+  stackNumber: Schema.optional(ChangeRequestNumber),
   expectedStackHeads: Schema.optional(Schema.Array(PullRequestStackHead)),
   ...PullRequestRef.fields,
   action: PullRequestAction,
@@ -888,6 +905,7 @@ export const PullRequestReviewPosition = Schema.Union([
 export type PullRequestReviewPosition = typeof PullRequestReviewPosition.Type;
 
 export const PullRequestReviewCommentDraft = Schema.Struct({
+  reviewRevision: Schema.optional(PullRequestReviewRevision),
   path: TrimmedNonEmptyString,
   /** GitLab needs both names for renamed-file comments; hosts using one path ignore this. */
   oldPath: Schema.optional(TrimmedNonEmptyString),
@@ -903,6 +921,7 @@ export type PullRequestReviewCommentDraft = typeof PullRequestReviewCommentDraft
 
 export const PullRequestSubmitReviewInput = Schema.Struct({
   ...PullRequestRef.fields,
+  expectedHeadOid: Schema.optional(TrimmedNonEmptyString),
   verdict: PullRequestReviewVerdict,
   body: Schema.String.check(Schema.isMaxLength(65_536)),
   comments: Schema.Array(PullRequestReviewCommentDraft),

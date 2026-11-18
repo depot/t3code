@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Clock from "effect/Clock";
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
@@ -168,7 +169,11 @@ export interface Dependencies extends FileRevisionsDependencies {
 export const make = (dependencies: Dependencies) => {
   const { filesViewedStore, requireProject, requiredViewerOf, toPullRequestError } = dependencies;
   const { fileRevisionsOf } = makeFileRevisions(dependencies);
-  const filesViewedScope = (project: SupportedProject, number: number, viewer: string | null) => ({
+  const filesViewedScope = (
+    project: SupportedProject,
+    number: ChangeRequestNumber,
+    viewer: string | null,
+  ) => ({
     provider: project.api.kind,
     host: project.host,
     repository: project.remote,
@@ -232,7 +237,7 @@ export const make = (dependencies: Dependencies) => {
 
   const inFilesViewedOrder = (
     project: SupportedProject,
-    number: number,
+    number: ChangeRequestNumber,
     write: Effect.Effect<void, PullRequestError>,
   ) =>
     // Atomically find, register and queue on gates; yielding during creation lets concurrent presses use separate gates.

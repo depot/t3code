@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -67,7 +68,7 @@ const WorkspaceSelections = Schema.Struct({
       environmentId: Schema.String,
       projectId: Schema.String,
       repository: Schema.String,
-      number: Schema.Number,
+      number: ChangeRequestNumber,
       host: Schema.optional(Schema.String),
       key: Schema.optional(Schema.String),
     }),

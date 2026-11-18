@@ -1,8 +1,8 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   McpCapabilityUnavailableError,
   OrchestratorMcpEnvironmentTarget,
   OrchestratorMcpFailure,
-  PositiveInt,
   PullRequestReviewGuide,
   PullRequestReviewGuideRun,
   PullRequestState,
@@ -57,7 +57,7 @@ export const PullRequestTargetInput = Schema.Struct({
     }),
   ),
   number: Schema.optional(
-    PositiveInt.annotate({
+    ChangeRequestNumber.annotate({
       description: "With `repository`, when no `url`.",
     }),
   ),
@@ -146,7 +146,7 @@ export type PullRequestToolError = typeof PullRequestToolError.Type;
 const PullRequestIdentity = {
   host: Schema.String,
   repository: Schema.String,
-  number: Schema.Int,
+  number: ChangeRequestNumber,
   url: Schema.String,
 };
 
@@ -165,7 +165,7 @@ const PullRequestNumbersByRepository = Schema.Array(
   Schema.Struct({
     host: Schema.String,
     repository: Schema.String,
-    numbers: Schema.Array(Schema.Int),
+    numbers: Schema.Array(ChangeRequestNumber),
   }),
 );
 
@@ -181,7 +181,7 @@ export type LinkPullRequestsResult = typeof LinkPullRequestsResult.Type;
 export const UnlinkPullRequestResult = Schema.Struct({
   host: Schema.String,
   repository: Schema.String,
-  number: Schema.Int,
+  number: ChangeRequestNumber,
   wasLinked: Schema.Boolean,
 });
 export type UnlinkPullRequestResult = typeof UnlinkPullRequestResult.Type;
@@ -192,7 +192,7 @@ export const UnlinkPullRequestsResult = Schema.Struct({
       host: Schema.String,
       repository: Schema.String,
       state: PullRequestState,
-      numbers: Schema.Array(Schema.Int),
+      numbers: Schema.Array(ChangeRequestNumber),
     }),
   ),
   unlinkedCount: Schema.Int,
@@ -233,7 +233,7 @@ export const ListThreadPullRequestsResult = Schema.Struct({
     Schema.Struct({
       kind: Schema.Literals(["native", "derived"]),
       /** Bottom to top; each pull request comes before the ones built on it. */
-      numbers: Schema.Array(Schema.Int),
+      numbers: Schema.Array(ChangeRequestNumber),
     }),
   ),
   /** Pass as `cursor` for the next page; null on the last page. */
@@ -362,6 +362,7 @@ const GuideTarget = Schema.Struct({
 
 const GuideOutcome = Schema.Struct({
   ...PullRequestIdentity,
+  number: Schema.Union([ChangeRequestNumber, Schema.Literal(0)]),
   outcome: Schema.Literals(["started", "running", "failed"]).annotate({
     description: "started: a run began. running: joined a run for this head. failed: see detail.",
   }),

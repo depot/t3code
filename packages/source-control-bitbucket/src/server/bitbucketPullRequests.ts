@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { trimOptionalString } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as DateTime from "effect/DateTime";
 import * as Option from "effect/Option";
@@ -5,7 +6,7 @@ import * as Schema from "effect/Schema";
 import { PositiveInt, TrimmedNonEmptyString } from "@t3tools/contracts";
 
 export interface NormalizedBitbucketPullRequestRecord {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly baseRefName: string;

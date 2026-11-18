@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Effect from "effect/Effect";
 import { limitTitleMessage } from "./threadTitleContext.ts";
-import type { BranchNamingOptions, ChatAttachment } from "@t3tools/contracts";
+import type { BranchNamingOptions, ChatAttachment, ChangeRequestNumber } from "@t3tools/contracts";
 
 import { limitSection } from "./textGenerationUtils.ts";
 import type { ReviewGuideStackLayer } from "./textGeneration.ts";
@@ -146,7 +146,7 @@ export function buildPrContentPrompt(input: PrContentPromptInput) {
 }
 
 export interface ReviewGuidePromptInput {
-  number: number;
+  number: ChangeRequestNumber;
   title: string;
   description: string;
   baseBranch: string;
@@ -157,7 +157,7 @@ export interface ReviewGuidePromptInput {
 }
 
 function reviewGuideStack(
-  number: number,
+  number: ChangeRequestNumber,
   stack: ReadonlyArray<ReviewGuideStackLayer> | undefined,
 ): string[] {
   if (stack === undefined || stack.length < 2) return [];

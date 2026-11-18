@@ -102,7 +102,7 @@ function FileRow(props: {
   return (
     <RowPressable
       accessibilityRole="button"
-      accessibilityLabel={`View diff for ${file.path}, ${file.additions} additions, ${file.deletions} deletions${props.viewed ? ", viewed" : ""}`}
+      accessibilityLabel={`View diff for ${file.path}, ${file.statsIncomplete ? "line counts unavailable" : `${file.additions} additions, ${file.deletions} deletions`}${props.viewed ? ", viewed" : ""}`}
       onPress={props.onPress}
       className="min-h-14 flex-row items-center gap-3 border-b border-border-subtle py-3 active:opacity-70"
     >
@@ -122,7 +122,12 @@ function FileRow(props: {
           </Text>
         ) : null}
       </View>
-      <PullRequestDiffStats additions={file.additions} deletions={file.deletions} compact />
+      <PullRequestDiffStats
+        statsIncomplete={file.statsIncomplete}
+        additions={file.additions}
+        deletions={file.deletions}
+        compact
+      />
       {props.viewed ? (
         <SymbolView
           name="checkmark.circle.fill"
@@ -281,6 +286,7 @@ export function usePullRequestFilesSection(params: PullRequestParams) {
             </View>
             {expected?.additions !== undefined && expected.deletions !== undefined ? (
               <PullRequestDiffStats
+                statsIncomplete={"statsIncomplete" in expected && expected.statsIncomplete}
                 additions={expected.additions}
                 deletions={expected.deletions}
                 compact
@@ -304,6 +310,7 @@ export function usePullRequestFilesSection(params: PullRequestParams) {
               {breakdown ? <ChangeBreakdownLine breakdown={breakdown} /> : null}
             </View>
             <PullRequestDiffStats
+              statsIncomplete={parsed.files.some((file) => file.statsIncomplete)}
               additions={parsed.additions}
               deletions={parsed.deletions}
               compact
@@ -485,6 +492,7 @@ export function PullRequestFilesSheet({ route }: StaticScreenProps<PullRequestDi
                     {describeFiles(parsed, files)}
                   </Text>
                   <PullRequestDiffStats
+                    statsIncomplete={parsed.files.some((file) => file.statsIncomplete)}
                     additions={parsed.additions}
                     deletions={parsed.deletions}
                     compact

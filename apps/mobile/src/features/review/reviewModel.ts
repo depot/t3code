@@ -61,6 +61,7 @@ export interface ReviewRenderableFile {
   readonly noticeActionable?: boolean;
   /** The host left out this file's hunks as too large; it can be loaded on its own. */
   readonly withheld?: boolean;
+  readonly statsIncomplete?: boolean;
   readonly path: string;
   readonly previousPath: string | null;
   readonly changeType: ChangeTypes;

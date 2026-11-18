@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { OrchestrationProjectShell, SourceControlProviderKind } from "@t3tools/contracts";
 import { canonicalizeGitCafePullRequestUrl } from "@t3tools/source-control-definitions/registry";
 import * as Effect from "effect/Effect";
@@ -9,7 +10,7 @@ import { normalizeThreadPullRequestKey } from "../sourceControl/threadPullReques
 export interface PullRequestTarget {
   readonly url?: string | undefined;
   readonly repository?: string | undefined;
-  readonly number?: number | undefined;
+  readonly number?: ChangeRequestNumber | undefined;
   readonly host?: string | undefined;
 }
 
@@ -58,7 +59,7 @@ export type PullRequestTargetError =
 export interface ResolvedTarget {
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
 }
 

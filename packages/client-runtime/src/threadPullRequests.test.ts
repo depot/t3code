@@ -115,7 +115,10 @@ describe("resolveThreadCurrentPullRequest", () => {
           }),
         }),
       );
-      for (const input of [links, [...links].sort((left, right) => right.number - left.number)]) {
+      for (const input of [
+        links,
+        [...links].sort((left, right) => Number(right.number) - Number(left.number)),
+      ]) {
         const expected = [...input].sort(
           (left, right) =>
             (Date.parse(right.snapshot?.updatedAt ?? right.linkedAt) || 0) -

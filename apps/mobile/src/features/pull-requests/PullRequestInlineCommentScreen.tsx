@@ -24,6 +24,7 @@ export type InlineCommentParams = PullRequestParams & {
   readonly oldPath?: string;
   readonly position: PullRequestReviewPosition;
   readonly headSha: string;
+  readonly reviewRevision?: import("@t3tools/contracts").PullRequestReviewRevision;
   readonly code: string;
 };
 export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<InlineCommentParams>) {
@@ -70,6 +71,7 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
           ...(params.oldPath ? { oldPath: params.oldPath } : {}),
           position: params.position,
           headSha: params.headSha,
+          ...(params.reviewRevision === undefined ? {} : { reviewRevision: params.reviewRevision }),
           code: params.code,
           body,
         },

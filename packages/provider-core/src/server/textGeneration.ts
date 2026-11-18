@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type {
   BranchNamingOptions,
   ChatAttachment,
@@ -79,7 +80,7 @@ export interface ThreadTitleGenerationResult {
 }
 
 export interface ReviewGuideStackLayer {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string | null;
   readonly headSha: string | null;
   readonly state: "open" | "closed" | "merged";
@@ -87,7 +88,7 @@ export interface ReviewGuideStackLayer {
 
 export interface ReviewGuideGenerationInput {
   cwd: string;
-  number: number;
+  number: ChangeRequestNumber;
   title: string;
   description: string;
   baseBranch: string;

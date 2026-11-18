@@ -211,7 +211,12 @@ function PullRequestIdentity(props: {
             <Text className={`text-xs font-t3-medium ${status.text}`}>{status.label}</Text>
           </View>
         )}
-        <PullRequestDiffStats additions={pr.additions ?? 0} deletions={pr.deletions ?? 0} compact />
+        <PullRequestDiffStats
+          statsIncomplete={"statsIncomplete" in pr && pr.statsIncomplete}
+          additions={pr.additions ?? 0}
+          deletions={pr.deletions ?? 0}
+          compact
+        />
         {"changedFiles" in pr && pr.changedFiles !== undefined ? (
           <Text className="text-2xs text-foreground-muted">
             {pr.changedFiles} {pr.changedFiles === 1 ? "file" : "files"}
@@ -1048,7 +1053,8 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
       path: file.path,
       ...(oldPath ? { oldPath } : {}),
       position,
-      headSha: diffHead.sha,
+      headSha: result.reviewRevision?.headOid ?? diffHead.sha,
+      ...(result.reviewRevision === undefined ? {} : { reviewRevision: result.reviewRevision }),
       code: row.content ?? "",
     });
   };

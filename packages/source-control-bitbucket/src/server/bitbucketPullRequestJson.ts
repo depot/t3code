@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   trimOptionalString as trimmed,
   toIsoUtc,
@@ -155,7 +156,7 @@ const RawRepositoryPermissionsSchema = Schema.Struct({
 });
 
 export interface BitbucketPullRequest {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly author: PullRequestActor | null;

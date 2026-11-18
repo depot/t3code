@@ -362,6 +362,7 @@ interface MutableAnnotationGroup {
 }
 
 interface DraftAnchor {
+  readonly reviewRevision?: import("@t3tools/contracts").PullRequestReviewRevision;
   readonly fileKey: string;
   readonly path: string;
   readonly oldPath: string | null;
@@ -531,6 +532,8 @@ function PullRequestCodeTab({
       if (
         existing !== undefined &&
         existing.patch === next.patch &&
+        existing.source.reviewRevision?.headOid === next.source.reviewRevision?.headOid &&
+        existing.source.reviewRevision?.baseOid === next.source.reviewRevision?.baseOid &&
         existing.truncated === next.truncated &&
         existing.nextCursor === next.nextCursor &&
         existing.source.withheldFilesReadable === next.source.withheldFilesReadable &&
@@ -540,6 +543,7 @@ function PullRequestCodeTab({
           return (
             refreshed !== undefined &&
             refreshed.path === file.path &&
+            refreshed.statsIncomplete === file.statsIncomplete &&
             refreshed.additions === file.additions &&
             refreshed.deletions === file.deletions
           );
@@ -1056,7 +1060,14 @@ function PullRequestCodeTab({
       (sourceFile && resolveDiffReviewAnchor(sourceFile, range, rangeComments)) ??
       resolveDiffReviewAnchor(file, range, rangeComments);
     if (anchor === null) return;
+    const sourceIndex = parsedSlices.findIndex(
+      (slice) =>
+        slice?.kind === "files" &&
+        slice.sourceFiles.some((candidate) => resolveFileDiffPath(candidate) === path),
+    );
+    const reviewRevision = loadedSlices[sourceIndex]?.source.reviewRevision;
     setDraft({
+      ...(reviewRevision === undefined ? {} : { reviewRevision }),
       fileKey: item.id,
       path,
       oldPath: previousPath === path ? null : previousPath,
@@ -1144,11 +1155,15 @@ function PullRequestCodeTab({
         fileKey={item.id}
         path={path}
         stat={
-          <PullRequestDiffStat
-            additions={additions}
-            deletions={deletions}
-            className="font-mono text-2xs"
-          />
+          omittedFileStats.get(path)?.statsIncomplete ? (
+            <span>Line counts unavailable</span>
+          ) : (
+            <PullRequestDiffStat
+              additions={additions}
+              deletions={deletions}
+              className="font-mono text-2xs"
+            />
+          )
         }
       />
     );
@@ -1341,6 +1356,9 @@ function PullRequestCodeTab({
             }
             addComment(reviewKey, {
               id: nextPendingReviewCommentId(),
+              ...(draft.reviewRevision === undefined
+                ? {}
+                : { reviewRevision: draft.reviewRevision }),
               path: draft.path,
               ...(draft.oldPath === null ? {} : { oldPath: draft.oldPath }),
               ...(draft.startPosition === undefined ? {} : { startPosition: draft.startPosition }),

@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   normalizeThreadPullRequestKey,
   threadPullRequestKeyOf,
@@ -32,7 +33,7 @@ export const listLinkedPullRequestThreads = Effect.fn("listLinkedPullRequestThre
       settled: number;
       host: string;
       repository: string;
-      number: number;
+      number: ChangeRequestNumber;
       url: string;
     }>`
       SELECT t.thread_id AS id, t.project_id AS "projectId", t.title,

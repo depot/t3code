@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -252,7 +253,7 @@ export const GitLabCliError = Schema.Union([
 export type GitLabCliError = typeof GitLabCliError.Type;
 
 export interface GitLabMergeRequestSummary {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly baseRefName: string;

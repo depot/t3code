@@ -1,9 +1,11 @@
+import { parseChangeRequestNumber } from "@t3tools/contracts";
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { RepositoryIdentity } from "@t3tools/contracts";
 import { canonicalizeGitCafePullRequestUrl } from "@t3tools/source-control-definitions/registry";
 
 import { sourceControlClients, type ChangeRequestTerminology } from "./sourceControlClients.ts";
 
-const PULL_REQUEST_NUMBER_PATTERN = /^#?(\d+)$/;
+const PULL_REQUEST_NUMBER_PATTERN = /^#?(\d+|mr_[a-z0-9]+)$/;
 
 export function parsePullRequestReference(input: string): string | null {
   const trimmed = input.trim();
@@ -48,7 +50,7 @@ export function pullRequestLinkProject(identity: RepositoryIdentity | null | und
     host,
     repository,
     terminology: definition.changeRequest,
-    webUrl: (number: number) =>
+    webUrl: (number: ChangeRequestNumber) =>
       definition.changeRequestUrl({
         host,
         repository,
@@ -62,7 +64,7 @@ export function pullRequestLinkProject(identity: RepositoryIdentity | null | und
 interface ResolvedLink {
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
 }
 
@@ -72,7 +74,7 @@ export function resolveLinkPullRequestInput(input: {
     readonly host: string;
     readonly repository: string;
     readonly terminology: ChangeRequestTerminology;
-    readonly webUrl: (number: number) => string | null;
+    readonly webUrl: (number: ChangeRequestNumber) => string | null;
   } | null;
   readonly hasProject: (reference: ResolvedLink) => boolean;
 }): { link: ResolvedLink } | { error: string } | null {
@@ -95,8 +97,8 @@ export function resolveLinkPullRequestInput(input: {
       },
     };
   }
-  const number = Number(parsed);
-  if (!Number.isSafeInteger(number) || number < 1) return null;
+  const number = parseChangeRequestNumber(parsed);
+  if (number === null) return null;
   if (input.project === null) {
     return {
       error:

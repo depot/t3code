@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   CommandId,
   isOrchestrationV2WorkActive,
@@ -205,8 +206,7 @@ const pauseKeyOf = (entry: LinkEntry) => {
 };
 
 /** Another layer of the stack `url` belongs to, in its host's canonical shape. */
-function siblingChangeRequestUrl(url: string, number: number): string | null {
-  if (!Number.isSafeInteger(number) || number < 1) return null;
+function siblingChangeRequestUrl(url: string, number: ChangeRequestNumber): string | null {
   const parsed = sourceControlDefinitions.parseChangeRequestUrl(url);
   if (parsed === null) return null;
   const { definition, link } = parsed;

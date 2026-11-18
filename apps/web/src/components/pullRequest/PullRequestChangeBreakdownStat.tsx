@@ -30,6 +30,7 @@ export function PullRequestChangeBreakdownStat({
   deletions,
   className,
   eager = false,
+  statsIncomplete,
 }: {
   environmentId: EnvironmentId;
   reference: PullRequestRef;
@@ -37,12 +38,16 @@ export function PullRequestChangeBreakdownStat({
   deletions: number;
   className: string;
   eager?: boolean;
+  statsIncomplete?: boolean;
 }) {
   const [requested, setRequested] = useState(eager);
   const query = useEnvironmentQuery(
-    requested ? pullRequestEnvironment.changeBreakdown({ environmentId, input: reference }) : null,
+    requested && !statsIncomplete
+      ? pullRequestEnvironment.changeBreakdown({ environmentId, input: reference })
+      : null,
   );
   const breakdown = query.data;
+  if (statsIncomplete) return <span className={className}>Line counts unavailable</span>;
   if (additions === 0 && deletions === 0) return null;
   return (
     <Tooltip>

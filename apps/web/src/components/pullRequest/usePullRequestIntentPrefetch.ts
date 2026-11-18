@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { EnvironmentId, ProjectId } from "@t3tools/contracts";
 import { useRef, useState } from "react";
 
@@ -14,7 +15,7 @@ interface PullRequestIntentTarget {
   readonly projectId: ProjectId;
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
 }
 
 /**

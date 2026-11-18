@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { ArrowLeftIcon, ExternalLinkIcon } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent } from "react";
@@ -11,7 +12,7 @@ import { openOnHostLabel, showPullRequestLinkContextMenu } from "./pullRequestLi
 interface CrumbsPullRequest {
   readonly url: string;
   readonly provider: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly repository: string;
   readonly title: string;
 }

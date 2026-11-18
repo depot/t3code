@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { describe, expect, it } from "@effect/vitest";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -606,7 +607,7 @@ describe("what one diff slice spends", () => {
   it.effect("keeps the pull request being read, not the one looked up first", () =>
     Effect.gen(function* () {
       const HOT = 7;
-      const readsOf = new Map<number, number>();
+      const readsOf = new Map<ChangeRequestNumber, number>();
 
       const provider = yield* make.pipe(
         Effect.provide(

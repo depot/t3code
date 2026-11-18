@@ -295,7 +295,9 @@ export function originUpdatedAt(pullRequest: OriginPullRequest): string {
   return timestamp(pullRequest.updatedAt) ?? timestamp(pullRequest.createdAt) ?? UNKNOWN_TIME;
 }
 
-export function toOriginChangeRequest(pullRequest: OriginPullRequest): ChangeRequest {
+export function toOriginChangeRequest(
+  pullRequest: OriginPullRequest,
+): ChangeRequest & { readonly number: number } {
   const updatedAt = timestamp(pullRequest.updatedAt);
   return {
     provider: SourceControlProviderKind.make("cursor-origin"),

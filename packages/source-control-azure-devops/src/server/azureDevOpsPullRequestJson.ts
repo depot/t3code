@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   trimOptionalString as trimmed,
   normalizeRefName,
@@ -143,7 +144,7 @@ export interface AzureDevOpsRepositoryLocation {
 }
 
 export interface AzureDevOpsPullRequest {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly author: PullRequestActor | null;

@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import type {
   PullRequestAction,
   PullRequestMergeMethod,
@@ -18,8 +19,8 @@ import { StackActionsGraphQLGroup } from "./stackActions.graphql.ts";
 
 const stackErrorIdentity = {
   repository: Schema.String,
-  number: Schema.Int,
-  stackNumber: Schema.Int,
+  number: ChangeRequestNumber,
+  stackNumber: ChangeRequestNumber,
 };
 
 export class GitHubStackChangedError extends Schema.TaggedError<GitHubStackChangedError>()(
@@ -112,8 +113,8 @@ export const runGitHubStackAction = Effect.fn("runGitHubStackAction")(function* 
   cwd: string;
   repository: string;
   host: string;
-  number: number;
-  stackNumber: number;
+  number: ChangeRequestNumber;
+  stackNumber: ChangeRequestNumber;
   expectedStackHeads?: ReadonlyArray<PullRequestStackHead>;
   action: PullRequestAction;
   mergeMethod?: PullRequestMergeMethod;
@@ -177,7 +178,10 @@ export const runGitHubStackAction = Effect.fn("runGitHubStackAction")(function* 
     const access = yield* Effect.forEach(
       open,
       (layer) =>
-        GraphQLResolver.request({ owner: owner!, name: name!, number: layer.number }, resolver),
+        GraphQLResolver.request(
+          { owner: owner!, name: name!, number: Number(layer.number) },
+          resolver,
+        ),
       { concurrency: "unbounded" },
     ).pipe(
       GitHubGraphQlClient.call({

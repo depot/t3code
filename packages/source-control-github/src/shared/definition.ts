@@ -85,7 +85,7 @@ export const definition = defineSourceControl({
   newRepositoryOwner: (account) => ({ owner: account }),
   defaultCloneTransport: "https",
   changeRequestUrl: ({ host, repository, number, remoteUrl, webUrl }) => {
-    if (!Number.isSafeInteger(number) || number < 1) return null;
+    if (typeof number !== "number" || !Number.isSafeInteger(number) || number < 1) return null;
     if (webUrl) return changeRequestUrlBelow(webUrl, `pull/${number}`);
     if (!isRepositoryPath(repository)) return null;
     try {

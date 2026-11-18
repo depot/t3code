@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import { assert, describe, expect, it } from "@effect/vitest";
 import * as DateTime from "effect/DateTime";
@@ -417,7 +418,7 @@ describe("resolveAutoSettlementAt", () => {
   });
 
   it("does not settle on pull requests that were already merged when linked", () => {
-    const link = (number: number, linkedAt: DateTime.Utc, mergedAt: DateTime.Utc) => ({
+    const link = (number: ChangeRequestNumber, linkedAt: DateTime.Utc, mergedAt: DateTime.Utc) => ({
       host: "example.test",
       repository: "owner/repository",
       number,
@@ -531,7 +532,7 @@ function makeSnapshot(
 function makePullRequestSummary(input: {
   readonly projectId: ProjectId;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly state: "open" | "closed" | "merged";
   readonly updatedAt?: string;
 }): PullRequestSummary {
@@ -611,7 +612,7 @@ const makeHarness = Effect.fn("makeThreadSettlementHarness")(function* (options:
     ReadonlyArray<{
       readonly projectId: ProjectId;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }>
   >([]);
   const summaryRecovery = yield* Ref.make<ReadonlyArray<boolean | undefined>>([]);
@@ -874,16 +875,26 @@ describe("ThreadSettlementServiceV2 worker", () => {
       }).pipe(Effect.provide(fixture.layer));
     }),
   );
-  it.effect("settles a merged pull request stored only in the thread links", () =>
+  it.effect.each([
+    {
+      host: "example.test",
+      repository: "owner/repository",
+      number: 42,
+      url: "https://example.test/owner/repository/pull/42",
+    },
+    {
+      host: "depot.dev",
+      repository: "org1/repo1",
+      number: "mr_c3d35jx9wn",
+      url: "https://depot.dev/orgs/org1/code/repositories/repo1/merge-requests?id=mr_c3d35jx9wn",
+    },
+  ])("settles a merged request on $host stored only in the thread links", (reference) =>
     Effect.gen(function* () {
       yield* TestClock.setTime(Date.parse(NOW));
       const thread = makeThread("merged-link", {
         pullRequests: [
           {
-            host: "example.test",
-            repository: "owner/repository",
-            number: 42,
-            url: "https://example.test/owner/repository/pull/42",
+            ...reference,
             source: "manual",
             linkedAt: "2026-08-20T00:00:00.000Z",
             snapshot: {
@@ -2081,7 +2092,7 @@ describe("ThreadSettlementServiceV2 worker", () => {
         assert.deepStrictEqual(
           (yield* Ref.get(fixture.summaryCalls))
             .map((call) => call.number)
-            .toSorted((left, right) => left - right),
+            .toSorted((left, right) => Number(left) - Number(right)),
           [42, 99, 99],
         );
       }).pipe(Effect.provide(fixture.layer));

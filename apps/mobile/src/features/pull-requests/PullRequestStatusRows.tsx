@@ -43,6 +43,7 @@ const STATUS_ACTIONS: readonly PullRequestAction[] = [
   "draft",
   "close",
   "reopen",
+  "withdraw-approval",
   "revert",
 ];
 const CHECK_PRIORITY = {

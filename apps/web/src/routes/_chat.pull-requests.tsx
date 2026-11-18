@@ -1,3 +1,4 @@
+import { isChangeRequestNumber } from "@t3tools/contracts";
 import type { EnvironmentId, ProjectId } from "@t3tools/contracts";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -40,9 +41,7 @@ export const Route = createFileRoute("/_chat/pull-requests")({
     ...(typeof raw.repository === "string" && raw.repository
       ? { repository: raw.repository.slice(0, 200) }
       : {}),
-    ...(typeof raw.number === "number" && Number.isInteger(raw.number) && raw.number > 0
-      ? { number: raw.number }
-      : {}),
+    ...(isChangeRequestNumber(raw.number) ? { number: raw.number } : {}),
     ...(typeof raw.projectId === "string" && raw.projectId
       ? { projectId: raw.projectId as ProjectId }
       : {}),

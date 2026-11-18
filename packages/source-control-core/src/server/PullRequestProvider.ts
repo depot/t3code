@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import type * as Stream from "effect/Stream";
@@ -87,7 +88,7 @@ export interface PullRequestProviderFailure {
 
 export interface ProviderChangeRequest {
   readonly stack?: PullRequestStackMembership;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly author: PullRequestActor | null;
@@ -111,7 +112,7 @@ export interface ProviderChangeRequest {
 }
 
 export interface ProviderChangeRequestSummary {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -125,6 +126,7 @@ export interface ProviderChangeRequestSummary {
   readonly additions?: number | undefined;
   readonly deletions?: number | undefined;
   readonly changedFiles?: number | undefined;
+  readonly statsIncomplete?: boolean;
   readonly reviewDecision?: PullRequestReviewDecision | null | undefined;
   readonly checksState?: PullRequestChecksState | null | undefined;
   readonly mergeability?: PullRequestMergeability | undefined;
@@ -141,14 +143,14 @@ export interface ProviderChangeRequestStackLayer {
   readonly title?: string;
   readonly isDraft?: boolean;
   readonly headSha?: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly headBranch: string;
   readonly state: PullRequestState;
 }
 
 export interface ProviderChangeRequestStack {
   readonly id: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
   readonly base: string;
   readonly layers: ReadonlyArray<ProviderChangeRequestStackLayer>;
@@ -176,7 +178,7 @@ export interface ProviderListCursor {
    * Rows already handed over at `updatedBefore`. Timestamp-paged hosts can exclude these before
    * applying their limit so a full page of tied updates does not repeat the same prefix.
    */
-  readonly seenAt?: ReadonlyArray<number> | undefined;
+  readonly seenAt?: ReadonlyArray<ChangeRequestNumber> | undefined;
   readonly resumeAfter?: string | undefined;
 }
 
@@ -187,7 +189,7 @@ export interface ProviderAcrossListCursor extends Omit<ProviderListCursor, "seen
 
 export interface ProviderRepositoryNumber {
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
 }
 
 export interface ProviderBatchedChangeRequest extends ProviderChangeRequest {
@@ -206,7 +208,7 @@ export interface ProviderBatchedChangeRequestPage {
 
 export interface ProviderChangeRequestStat {
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly additions: number;
   readonly deletions: number;
 }
@@ -216,6 +218,7 @@ export interface ProviderChangeRequestDetail extends ProviderChangeRequest {
   readonly headSha?: string | null;
   readonly body: string;
   readonly changedFiles: number;
+  readonly statsIncomplete?: boolean;
   readonly mergedAt: string | null;
   readonly closedAt: string | null;
   readonly reviewers: ReadonlyArray<PullRequestActor>;
@@ -244,6 +247,7 @@ export interface ProviderChangeRequestActivity {
 }
 
 export interface ProviderDiffSlice {
+  readonly reviewRevision?: { readonly headOid: string; readonly baseOid: string };
   readonly patch: string;
   /** Content was omitted within this slice. */
   readonly truncated: boolean;
@@ -381,16 +385,16 @@ export interface PullRequestProviderApi {
     readonly host: string;
     readonly changeRequests: ReadonlyArray<{
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }>;
   }) => Effect.Effect<ReadonlyArray<ProviderChangeRequestStat>, PullRequestProviderError>;
 
   readonly getChangeRequestChecks?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<Pick<PullRequestChecks, "state" | "checks">, PullRequestProviderError>;
 
   readonly getChangeRequest: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<ProviderChangeRequestDetail, PullRequestProviderError>;
 
   /**
@@ -400,23 +404,23 @@ export interface PullRequestProviderApi {
    */
   readonly forgetChangeRequestReads?: (scope?: {
     readonly repository: string;
-    readonly number?: number;
+    readonly number?: ChangeRequestNumber;
   }) => Effect.Effect<void>;
 
   readonly getChangeRequestPreview?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<
     Omit<PullRequestPreview, "projectId" | "repository">,
     PullRequestProviderError
   >;
 
   readonly getChangeRequestSummary?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<ProviderChangeRequestSummary, PullRequestProviderError>;
 
   /** Null means unknown; an absent method requires full watch reads. */
   readonly getChangeRequestWatchFingerprint?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<ProviderChangeRequestWatchFingerprint | null, PullRequestProviderError>;
 
   /**
@@ -424,20 +428,23 @@ export interface PullRequestProviderApi {
    * Ends where the host or account offers no such feed; readers then rely on polling alone.
    */
   readonly changeRequestEvents?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Stream.Stream<void>;
 
   readonly getChangeRequestStack?: (
-    input: ProviderRepositoryRef & { readonly includeDetails?: boolean; readonly number: number },
+    input: ProviderRepositoryRef & {
+      readonly includeDetails?: boolean;
+      readonly number: ChangeRequestNumber;
+    },
   ) => Effect.Effect<ProviderChangeRequestStack | null, PullRequestProviderError>;
 
   readonly getChangeRequestActivity: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<ProviderChangeRequestActivity, PullRequestProviderError>;
 
   readonly getReviewThreadComments?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly threadId: string;
       readonly cursor: string;
     },
@@ -446,14 +453,14 @@ export interface PullRequestProviderApi {
   /** Read fresh before writes; client permissions may be stale or bypassed. */
   readonly getViewerPermissions: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly includeUpdateBranch?: boolean;
     },
   ) => Effect.Effect<PullRequestViewerPermissions, PullRequestProviderError>;
 
   readonly getDiff: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly cursor?: string | undefined;
       readonly commit?: string | undefined;
       readonly path?: string | undefined;
@@ -463,7 +470,7 @@ export interface PullRequestProviderApi {
   /** Exact changed path pairs, including renames, without fetching patch contents. */
   readonly getDiffFilePaths?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly cursor?: string | undefined;
       readonly commit?: string | undefined;
     },
@@ -471,7 +478,7 @@ export interface PullRequestProviderApi {
 
   readonly getDiffFileContents?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commit?: string | undefined;
       readonly changeType: "change" | "rename-pure" | "rename-changed" | "new" | "deleted";
       readonly oldPath: string;
@@ -480,12 +487,12 @@ export interface PullRequestProviderApi {
   ) => Effect.Effect<ProviderDiffFileContents, PullRequestProviderError>;
 
   readonly getFilesViewed?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<ProviderFilesViewed, PullRequestProviderError>;
 
   /** Line counts for every changed file. Optional: a host without one shows no breakdown. */
   readonly getFileStats?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<ProviderFileStats, PullRequestProviderError>;
 
   /**
@@ -494,7 +501,7 @@ export interface PullRequestProviderApi {
    */
   readonly setFilesViewed?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly files: ReadonlyArray<{ readonly path: string; readonly viewed: boolean }>;
     },
   ) => Effect.Effect<void, PullRequestProviderError>;
@@ -502,7 +509,7 @@ export interface PullRequestProviderApi {
   /** Required for `environment` viewed marks to invalidate them after changes. */
   readonly getFileRevisions?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly paths: ReadonlyArray<string>;
     },
   ) => Effect.Effect<ProviderFileRevisions, PullRequestProviderError>;
@@ -510,9 +517,9 @@ export interface PullRequestProviderApi {
   /** Returns the change request as the host's reply left it, or void when the reply lacks it. */
   readonly runAction: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly action: PullRequestAction;
-      readonly stackNumber?: number;
+      readonly stackNumber?: ChangeRequestNumber;
       readonly expectedStackHeads?: ReadonlyArray<PullRequestStackHead>;
       readonly removeAgentCreditsOnMerge?: boolean;
       readonly mergeMethod?: PullRequestMergeMethod;
@@ -524,19 +531,19 @@ export interface PullRequestProviderApi {
   readonly updateChangeRequest?: (
     input: ProviderRepositoryRef & {
       readonly maintainerCanModify?: boolean | undefined;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly title?: string | undefined;
       readonly body?: string | undefined;
     },
   ) => Effect.Effect<void, PullRequestProviderError>;
 
   readonly comment: (
-    input: ProviderRepositoryRef & { readonly number: number; readonly body: string },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber; readonly body: string },
   ) => Effect.Effect<void, PullRequestProviderError>;
 
   readonly updateComment?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commentId: string;
       readonly kind: "issue-comment" | "review-comment";
       readonly body: string;
@@ -545,7 +552,8 @@ export interface PullRequestProviderApi {
 
   readonly submitReview: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly expectedHeadOid?: string;
+      readonly number: ChangeRequestNumber;
       readonly verdict: PullRequestReviewVerdict;
       readonly body: string;
       readonly comments: ReadonlyArray<PullRequestReviewCommentDraft>;
@@ -555,7 +563,7 @@ export interface PullRequestProviderApi {
   /** Exclude the author using host-specific account identities. */
   readonly listReviewerCandidates: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       /** Asks the host to search past its first page of candidates. */
       readonly query?: string | undefined;
     },
@@ -563,7 +571,7 @@ export interface PullRequestProviderApi {
 
   readonly setReviewerRequest: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly reviewers: ReadonlyArray<{
         readonly id: string;
         readonly kind: PullRequestReviewerKind;
@@ -573,7 +581,7 @@ export interface PullRequestProviderApi {
   ) => Effect.Effect<void, PullRequestProviderError>;
 
   readonly listLabelCandidates?: (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) => Effect.Effect<PullRequestLabelCandidateList, PullRequestProviderError>;
 
   /**
@@ -608,7 +616,7 @@ export interface PullRequestProviderApi {
 
   readonly setLabels?: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly labels: ReadonlyArray<string>;
       readonly applied: boolean;
     },
@@ -616,7 +624,7 @@ export interface PullRequestProviderApi {
 
   readonly replyToThread: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly threadId: string;
       readonly body: string;
     },
@@ -625,7 +633,7 @@ export interface PullRequestProviderApi {
   /** `subjectId` is the conversation's remark ID; absent targets the change request description. */
   readonly setReaction: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly subjectId?: string | undefined;
       readonly content: PullRequestReactionContent;
       readonly reacted: boolean;
@@ -634,7 +642,7 @@ export interface PullRequestProviderApi {
 
   readonly setThreadResolution: (
     input: ProviderRepositoryRef & {
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly threadId: string;
       readonly resolved: boolean;
     },

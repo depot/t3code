@@ -1,3 +1,4 @@
+import { parseChangeRequestNumber } from "@t3tools/contracts";
 import { isDraftThreadRoute } from "./features/threads/thread-route-state";
 import { ComponentCatalogScreen } from "./features/development/ComponentCatalogScreen";
 import { PullRequestGuideStopScreen } from "./features/pull-requests/guide/PullRequestGuideScreen";
@@ -508,7 +509,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       screen: PullRequestRouteScreen,
       linking: {
         path: "pull-requests/:environmentId/:projectId/:repository/:number",
-        parse: { number: Number },
+        parse: { number: parseChangeRequestNumber },
       },
       options: pageRoute({ duoMinimize: "never" }),
     }),

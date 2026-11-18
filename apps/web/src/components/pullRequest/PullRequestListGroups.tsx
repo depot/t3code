@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { EnvironmentId, PullRequestAction } from "@t3tools/contracts";
 import { EyeIcon, LayersIcon, PenLineIcon, UsersIcon, type LucideIcon } from "lucide-react";
 import { useDeferredValue, type RefCallback } from "react";
@@ -77,7 +78,7 @@ export function PullRequestListGroups({
     readonly environmentId: string | undefined;
     readonly repository: string;
     readonly host: string | undefined;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   } | null;
   showProvider: boolean;
   statsRef: RefCallback<HTMLDivElement>;

@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { isCommitSha } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as Cache from "effect/Cache";
 import * as Context from "effect/Context";
@@ -153,7 +154,7 @@ export class BitbucketPullRequestApi extends Context.Service<
 
     readonly getPullRequest: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<BitbucketPullRequest, BitbucketPullRequestApiError>;
 
     readonly getRepositoryPermission: (input: {
@@ -162,7 +163,7 @@ export class BitbucketPullRequestApi extends Context.Service<
 
     readonly getPullRequestDiff: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commit?: string | undefined;
     }) => Effect.Effect<
       { readonly patch: string; readonly truncated: boolean },
@@ -171,13 +172,13 @@ export class BitbucketPullRequestApi extends Context.Service<
 
     readonly getDiffStat: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<BitbucketDiffStat, BitbucketPullRequestApiError>;
 
     /** Truncated patches cannot identify absent paths as deleted. */
     readonly getFileRevisions: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly paths: ReadonlyArray<string>;
     }) => Effect.Effect<
       { readonly revisions: ReadonlyMap<string, string>; readonly complete: boolean },
@@ -186,12 +187,12 @@ export class BitbucketPullRequestApi extends Context.Service<
 
     readonly getMergeability: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<PullRequestMergeability, BitbucketPullRequestApiError>;
 
     readonly listComments: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<
       {
         readonly comments: ReadonlyArray<PullRequestComment>;
@@ -203,56 +204,56 @@ export class BitbucketPullRequestApi extends Context.Service<
 
     readonly listCommits: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ReadonlyArray<PullRequestCommit>, BitbucketPullRequestApiError>;
 
     readonly listChecks: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ReadonlyArray<PullRequestCheck>, BitbucketPullRequestApiError>;
 
     readonly listReviewerCandidates: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<PullRequestReviewerCandidateList, BitbucketPullRequestApiError>;
 
     readonly setReviewerRequest: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly reviewers: ReadonlyArray<{ readonly id: string }>;
       readonly requested: boolean;
     }) => Effect.Effect<void, BitbucketPullRequestApiError>;
 
     readonly runAction: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly action: PullRequestAction;
       readonly mergeMethod?: PullRequestMergeMethod;
     }) => Effect.Effect<BitbucketPullRequest | void, BitbucketPullRequestApiError>;
 
     readonly updateChangeRequest: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly title?: string | undefined;
       readonly body?: string | undefined;
     }) => Effect.Effect<void, BitbucketPullRequestApiError>;
 
     readonly comment: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly body: string;
     }) => Effect.Effect<void, BitbucketPullRequestApiError>;
 
     readonly updateComment: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commentId: string;
       readonly body: string;
     }) => Effect.Effect<void, BitbucketPullRequestApiError>;
 
     readonly submitReview: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly verdict: PullRequestReviewVerdict;
       readonly body: string;
       readonly comments: ReadonlyArray<PullRequestReviewCommentDraft>;
@@ -260,14 +261,14 @@ export class BitbucketPullRequestApi extends Context.Service<
 
     readonly replyToComment: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commentId: string;
       readonly body: string;
     }) => Effect.Effect<void, BitbucketPullRequestApiError>;
 
     readonly setCommentResolution: (input: {
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commentId: string;
       readonly resolved: boolean;
     }) => Effect.Effect<void, BitbucketPullRequestApiError>;
@@ -496,7 +497,7 @@ export const make = Effect.gen(function* () {
 
   const pullRequestDiff = (input: {
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly commit?: string | undefined;
   }): Effect.Effect<
     { readonly patch: string; readonly truncated: boolean },
@@ -611,7 +612,7 @@ export const make = Effect.gen(function* () {
         return { revisions: new Map<string, string>(), complete: false };
       return yield* Cache.get(
         revisionPatches,
-        encodeRevisionKey([input.repository, input.number]),
+        encodeRevisionKey([input.repository, Number(input.number)]),
       ).pipe(
         Effect.map((diff) => {
           const revisions = new Map(diff.revisions);

@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Arr from "effect/Array";
 import * as Cache from "effect/Cache";
 import * as Clock from "effect/Clock";
@@ -221,7 +222,7 @@ function isNotGitRepositoryError(error: GitCommandError): boolean {
 }
 
 interface OpenPrInfo {
-  number: number;
+  number: ChangeRequestNumber;
   title: string;
   url: string;
   baseRefName: string;
@@ -243,7 +244,7 @@ const pullRequestUpdatedAtDescOrder: Order.Order<PullRequestInfo> = Order.mapInp
 );
 
 interface ResolvedPullRequest {
-  number: number;
+  number: ChangeRequestNumber;
   title: string;
   url: string;
   baseBranch: string;
@@ -252,6 +253,7 @@ interface ResolvedPullRequest {
 }
 
 interface PullRequestHeadRemoteInfo {
+  headSha?: string | undefined;
   isCrossRepository?: boolean | undefined;
   headRepositoryNameWithOwner?: string | null | undefined;
   headRepositoryOwnerLogin?: string | null | undefined;
@@ -648,7 +650,7 @@ function appendUnique(values: string[], next: string | null | undefined): void {
 }
 
 function toStatusPr(pr: PullRequestInfo): {
-  number: number;
+  number: ChangeRequestNumber;
   title: string;
   url: string;
   baseRef: string;
@@ -679,7 +681,7 @@ function normalizePullRequestReference(reference: string): string {
 }
 
 function toResolvedPullRequest(pr: {
-  number: number;
+  number: ChangeRequestNumber;
   title: string;
   url: string;
   baseRefName: string;
@@ -702,11 +704,13 @@ function shouldPreferSshRemote(url: string | null): boolean {
 }
 
 function toPullRequestHeadRemoteInfo(pr: {
+  headSha?: string | undefined;
   isCrossRepository?: boolean | undefined;
   headRepositoryNameWithOwner?: string | null | undefined;
   headRepositoryOwnerLogin?: string | null | undefined;
 }): PullRequestHeadRemoteInfo {
   return {
+    ...(pr.headSha !== undefined ? { headSha: pr.headSha } : {}),
     ...(pr.isCrossRepository !== undefined ? { isCrossRepository: pr.isCrossRepository } : {}),
     ...(pr.headRepositoryNameWithOwner !== undefined
       ? { headRepositoryNameWithOwner: pr.headRepositoryNameWithOwner }
@@ -1066,10 +1070,11 @@ export const make = Effect.gen(function* () {
   // to a known host.
   const changeRequestHeadRef = Effect.fn("GitManager.changeRequestHeadRef")(function* (
     cwd: string,
-    number: number,
+    number: ChangeRequestNumber,
+    headSha?: string,
   ) {
     const provider = yield* sourceControlProvider(cwd);
-    const ref = sourceControlDefinitions.get(provider.kind).changeRequestHeadRef?.(number);
+    const ref = sourceControlDefinitions.get(provider.kind).changeRequestHeadRef?.(number, headSha);
     if (ref === undefined) {
       return yield* new GitManagerError({
         operation: "changeRequestHeadRef",
@@ -1081,8 +1086,8 @@ export const make = Effect.gen(function* () {
   });
 
   const fetchChangeRequestHeadIntoBranch = Effect.fn("GitManager.fetchChangeRequestHeadIntoBranch")(
-    function* (cwd: string, number: number, branch: string) {
-      const ref = yield* changeRequestHeadRef(cwd, number);
+    function* (cwd: string, number: ChangeRequestNumber, branch: string, headSha?: string) {
+      const ref = yield* changeRequestHeadRef(cwd, number, headSha);
       yield* gitCore.fetchRefIntoBranch({ cwd, ref, branch });
     },
   );
@@ -1096,7 +1101,12 @@ export const make = Effect.gen(function* () {
       const repositoryNameWithOwner = resolveHeadRepositoryNameWithOwner(pullRequest) ?? "";
 
       if (repositoryNameWithOwner.length === 0) {
-        yield* fetchChangeRequestHeadIntoBranch(cwd, pullRequest.number, localBranch).pipe(
+        yield* fetchChangeRequestHeadIntoBranch(
+          cwd,
+          pullRequest.number,
+          localBranch,
+          pullRequest.headSha,
+        ).pipe(
           // Fall back to a branch fetch only for an open PR in the primary remote's repository.
           // A host can resolve a PR number from another repository, so verify the repository first.
           // Closed PR branches may have moved past the head recorded at closure.
@@ -1168,7 +1178,12 @@ export const make = Effect.gen(function* () {
   ) =>
     materializePullRequestHeadBranchBase(cwd, pullRequest, localBranch).pipe(
       Effect.catch((primaryCause) =>
-        fetchChangeRequestHeadIntoBranch(cwd, pullRequest.number, localBranch).pipe(
+        fetchChangeRequestHeadIntoBranch(
+          cwd,
+          pullRequest.number,
+          localBranch,
+          pullRequest.headSha,
+        ).pipe(
           Effect.mapError(
             (fallbackCause) =>
               new GitPullRequestMaterializationError({
@@ -2013,7 +2028,7 @@ export const make = Effect.gen(function* () {
     headContext: BranchHeadContext,
     defaultBranch: string | null,
   ) {
-    const parsedByNumber = new Map<number, PullRequestInfo>();
+    const parsedByNumber = new Map<ChangeRequestNumber, PullRequestInfo>();
 
     const provider = yield* sourceControlProvider(cwd);
     const probe = headBranchProbe(
@@ -3006,7 +3021,7 @@ export const make = Effect.gen(function* () {
 
   const ensureNoTrackedChanges = Effect.fn("ensureNoTrackedChanges")(function* (
     cwd: string,
-    pullRequestNumber: number,
+    pullRequestNumber: ChangeRequestNumber,
   ) {
     const trackedChanges = yield* gitCore.execute({
       operation: "GitManager.preparePullRequestThread.trackedChanges",
@@ -3154,7 +3169,11 @@ export const make = Effect.gen(function* () {
         // head. The branch's upstream does not: configuring it is best-effort, so a branch cut
         // from `origin/main` whose head branch has since been deleted still resolves — and
         // following it would move the checkout onto main and call that the pull request.
-        const refreshed = yield* changeRequestHeadRef(worktreePath, pullRequest.number).pipe(
+        const refreshed = yield* changeRequestHeadRef(
+          worktreePath,
+          pullRequest.number,
+          pullRequestSummary.headSha,
+        ).pipe(
           Effect.flatMap((ref) => gitCore.fetchRefCommit({ cwd: worktreePath, ref })),
           // A host that publishes no head ref leaves the remote-tracking branch,
           // taken only where it is the head branch's own rather than whatever the checkout
@@ -3177,6 +3196,17 @@ export const make = Effect.gen(function* () {
                 revision: details.upstreamRef,
               });
             }),
+          ),
+          Effect.filterOrFail(
+            (target) =>
+              pullRequestSummary.headSha === undefined ||
+              target.commitSha === pullRequestSummary.headSha,
+            () =>
+              new GitManagerError({
+                operation: "preparePullRequestThread",
+                cwd: worktreePath,
+                detail: "The fetched commit does not match the pull request head.",
+              }),
           ),
           Effect.flatMap((target) =>
             gitCore.refreshCheckedOutBranch({
@@ -3257,7 +3287,11 @@ export const make = Effect.gen(function* () {
           pullRequestWithRemoteInfo,
           localPullRequestBranch,
         );
-        const target = yield* changeRequestHeadRef(cwd, pullRequest.number).pipe(
+        const target = yield* changeRequestHeadRef(
+          cwd,
+          pullRequest.number,
+          pullRequestSummary.headSha,
+        ).pipe(
           Effect.flatMap((ref) => gitCore.fetchRefCommit({ cwd, ref })),
           Effect.filterOrFail(
             (resolved) =>

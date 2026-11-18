@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type {
   PullRequestActor,
   PullRequestCapabilities,
@@ -105,7 +106,7 @@ export function narrowPullRequestMentions<A extends { login: string; name: strin
 
 /** Candidates the typed sigil links, by number prefix or title. */
 export function narrowPullRequestReferences<
-  A extends { reference: string; number: number; title: string },
+  A extends { reference: string; number: ChangeRequestNumber; title: string },
 >(
   candidates: ReadonlyArray<A>,
   trigger: Pick<PullRequestComposerTrigger, "sigil" | "query">,

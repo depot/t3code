@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { EnvironmentId, ProjectId } from "@t3tools/contracts";
 
 import type { OpenPreviewMutation } from "./browser/openFileInPreview";
@@ -55,7 +56,7 @@ export function planNextReopen(
 
 type PullRequestsSearchLike = Partial<PullRequestListPreferences> & {
   repository?: string;
-  number?: number;
+  number?: ChangeRequestNumber;
   selectedProjectId?: ProjectId;
   selectedHost?: string;
   selectedEnvironmentId?: EnvironmentId;

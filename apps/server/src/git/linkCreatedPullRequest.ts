@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   type CommandId,
   type GitRunStackedActionResult,
@@ -15,7 +16,7 @@ import { sourceControlDefinitions } from "../sourceControl/sourceControlDefiniti
 export interface CreatedPullRequestKey {
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
 }
 

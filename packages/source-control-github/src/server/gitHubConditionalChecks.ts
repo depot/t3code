@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Clock from "effect/Clock";
 import * as Cache from "effect/Cache";
 import * as Context from "effect/Context";
@@ -65,7 +66,7 @@ export const makeChecksRevalidator = Effect.gen(function* () {
     { capacity: 128, timeToLive: () => "30 minutes" },
   );
   return (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
     read: Effect.Effect<
       Pick<GitHubPullRequestDetail, "state" | "checks" | "headSha"> & {
         workflowApprovalsRequired?: number;

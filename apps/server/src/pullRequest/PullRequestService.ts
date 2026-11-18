@@ -1,3 +1,5 @@
+import { parseChangeRequestNumber } from "@t3tools/contracts";
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { isSshRemoteUrl } from "@t3tools/shared/sourceControl";
 import { parseDiffFilePaths } from "@t3tools/source-control-core/server/diffFileRevisions";
 import * as Cache from "effect/Cache";
@@ -314,6 +316,7 @@ const VERDICT_LABELS: Record<PullRequestReviewVerdict, string> = {
 };
 
 const ACTION_ACCESS_REFUSALS: Record<PullRequestAction, string> = {
+  "withdraw-approval": "You need review access on this repository to withdraw your approval.",
   merge: "You need write access on this repository to merge.",
   ready:
     "You need write access on this repository, or to have opened this change request, to mark it ready for review.",
@@ -374,11 +377,11 @@ interface RepositoryBatch {
 }
 
 interface ListCursor extends ProviderListCursor {
-  readonly seenAt: ReadonlyArray<number>;
+  readonly seenAt: ReadonlyArray<ChangeRequestNumber>;
 }
 
 const LIST_CURSOR_PATTERN =
-  /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2}))\|(\d{1,9})\|(\d{1,9}(?:,\d{1,9})*)?(?:\|([\w.:~+-]{1,128}))?$/;
+  /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2}))\|(\d{1,9})\|([a-z0-9_-]{1,128}(?:,[a-z0-9_-]{1,128})*)?(?:\|([\w.:~+/=-]{1,4096}))?$/;
 
 function parseListCursor(raw: string): ListCursor | null {
   const match = LIST_CURSOR_PATTERN.exec(raw);
@@ -387,7 +390,13 @@ function parseListCursor(raw: string): ListCursor | null {
   return {
     updatedBefore: match[1]!,
     delivered: Number(match[2]),
-    seenAt: seenAt === undefined ? [] : seenAt.split(",").map(Number),
+    seenAt:
+      seenAt === undefined
+        ? []
+        : seenAt.split(",").flatMap((value) => {
+            const number = parseChangeRequestNumber(value);
+            return number === null ? [] : [number];
+          }),
     ...(match[4] === undefined ? {} : { resumeAfter: match[4] }),
   };
 }
@@ -1801,6 +1810,9 @@ export const make = Effect.gen(function* () {
     ...(changeRequest.changedFiles === undefined
       ? {}
       : { changedFiles: changeRequest.changedFiles }),
+    ...(changeRequest.statsIncomplete === undefined
+      ? {}
+      : { statsIncomplete: changeRequest.statsIncomplete }),
     ...(changeRequest.reviewDecision === undefined
       ? {}
       : { reviewDecision: changeRequest.reviewDecision }),
@@ -1916,6 +1928,9 @@ export const make = Effect.gen(function* () {
             additions: changeRequest.additions,
             deletions: changeRequest.deletions,
             changedFiles: changeRequest.changedFiles,
+            ...(changeRequest.statsIncomplete === undefined
+              ? {}
+              : { statsIncomplete: changeRequest.statsIncomplete }),
             headBranch: changeRequest.headBranch,
             ...(changeRequest.headRepositoryNameWithOwner === undefined
               ? {}
@@ -2444,6 +2459,9 @@ export const make = Effect.gen(function* () {
         if (!review.verdicts.includes(input.verdict)) {
           return refuse(`This host cannot ${VERDICT_LABELS[input.verdict]} a change request.`);
         }
+        if (review.summary === false && input.body.trim().length > 0) {
+          return refuse("This host does not support a review summary.");
+        }
         if (input.comments.length > 0 && !review.inlineComment) {
           return refuse("This host cannot comment on a line of a change request.");
         }
@@ -2474,6 +2492,9 @@ export const make = Effect.gen(function* () {
                 repository: project.repository,
                 host: project.host,
                 number: input.number,
+                ...(input.expectedHeadOid === undefined
+                  ? {}
+                  : { expectedHeadOid: input.expectedHeadOid }),
                 verdict: input.verdict,
                 body: input.body,
                 comments: input.comments,
@@ -2811,7 +2832,7 @@ export const make = Effect.gen(function* () {
     const byProject = new Map(supported.map((project) => [project.project.id, project]));
     const wanted = new Map<
       string,
-      { readonly project: SupportedProject; readonly number: number }
+      { readonly project: SupportedProject; readonly number: ChangeRequestNumber }
     >();
     for (const ref of input.refs) {
       const project = byProject.get(ref.projectId);
@@ -2824,7 +2845,10 @@ export const make = Effect.gen(function* () {
       }
       wanted.set(`${project.project.id} ${ref.number}`, { project, number: ref.number });
     }
-    const byHost = new Map<string, Array<{ project: SupportedProject; number: number }>>();
+    const byHost = new Map<
+      string,
+      Array<{ project: SupportedProject; number: ChangeRequestNumber }>
+    >();
     for (const entry of wanted.values()) {
       const held = byHost.get(entry.project.host);
       if (held === undefined) byHost.set(entry.project.host, [entry]);
@@ -3359,6 +3383,7 @@ export const make = Effect.gen(function* () {
     additions: detail.additions,
     deletions: detail.deletions,
     changedFiles: detail.changedFiles,
+    statsIncomplete: detail.statsIncomplete,
     mergeability: detail.mergeability,
     ...(detail.rebaseRequired === undefined ? {} : { rebaseRequired: detail.rebaseRequired }),
     headBranch: detail.headBranch,
@@ -3632,7 +3657,10 @@ export const make = Effect.gen(function* () {
 
   const listStatsCache = yield* Cache.makeWith(
     (key: string) => {
-      const [, refs] = JSON.parse(key) as [number, ReadonlyArray<[string, string, number, number]>];
+      const [, refs] = JSON.parse(key) as [
+        number,
+        ReadonlyArray<[string, string, ChangeRequestNumber, number]>,
+      ];
       return listStatsUncached({
         refs: refs.map(([projectId, repository, number]) => ({ projectId, repository, number })),
       } as unknown as PullRequestListStatsInput).pipe(
@@ -3691,7 +3719,10 @@ export const make = Effect.gen(function* () {
     return { stats: [...held, ...result.stats] };
   });
 
-  const forgetProviderReads = (scope?: { readonly repository: string; readonly number?: number }) =>
+  const forgetProviderReads = (scope?: {
+    readonly repository: string;
+    readonly number?: ChangeRequestNumber;
+  }) =>
     Effect.forEach(
       registry.kinds,
       (kind) => registry.get(kind)?.forgetChangeRequestReads?.(scope) ?? Effect.void,

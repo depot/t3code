@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import { trimOptionalString as trimmed } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as Cause from "effect/Cause";
 import * as Exit from "effect/Exit";
@@ -93,7 +94,7 @@ interface ActorFields {
 }
 
 interface ListItemFields {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly author?: ActorFields | null | undefined;
@@ -338,7 +339,7 @@ export function buildReviewSubmission(input: {
 
 export interface GitHubPullRequestListItem {
   readonly stack?: PullRequestStackMembership;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly author: PullRequestActor | null;
@@ -379,7 +380,7 @@ export interface GitHubWorkflowRunApproval {
 }
 
 export interface GitHubPullRequestHead {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly headSha: string;
   readonly isCrossRepository?: boolean;
   readonly headRepositoryOwner: string | null;
@@ -905,7 +906,7 @@ export interface GitHubPullRequestSearchItem extends GitHubPullRequestListItem {
 
 export function toStackMembership(raw: {
   readonly stack?: {
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly size: number;
     readonly baseRefName: string;
   } | null;
@@ -926,19 +927,22 @@ const REPOSITORY_PART = /^[A-Za-z0-9._-]+$/;
 /** Invalid selectors can fail an entire aliased request, not just their own lookup. */
 export function pullRequestLookup(changeRequest: {
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
 }): { readonly owner: string; readonly name: string; readonly number: number } | null {
   const [owner, name, ...rest] = changeRequest.repository.trim().split("/");
   if (rest.length > 0 || owner === undefined || name === undefined) return null;
   if (!REPOSITORY_PART.test(owner) || !REPOSITORY_PART.test(name)) return null;
   const { number } = changeRequest;
-  return Number.isSafeInteger(number) && number > 0 && number <= 2_147_483_647
+  return typeof number === "number" &&
+    Number.isSafeInteger(number) &&
+    number > 0 &&
+    number <= 2_147_483_647
     ? { owner, name, number }
     : null;
 }
 
 export interface GitHubPullRequestSummary {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string;
   readonly url: string;
   readonly headBranch: string;
@@ -1904,7 +1908,7 @@ export function toPullRequestFileStatsPage(
 const RawStackPullRequestSchema = Schema.Struct({
   title: Schema.optional(Schema.String),
   draft: Schema.optional(Schema.Boolean),
-  number: Schema.Int,
+  number: ChangeRequestNumber,
   head: Schema.Struct({ ref: Schema.String, sha: Schema.optional(Schema.String) }),
   state: Schema.optional(Schema.NullOr(Schema.String)),
   merged_at: Schema.optional(Schema.NullOr(Schema.String)),
@@ -1912,7 +1916,7 @@ const RawStackPullRequestSchema = Schema.Struct({
 
 const RawStackSchema = Schema.Struct({
   id: Schema.optional(Schema.NullOr(Schema.Union([Schema.Int, Schema.String]))),
-  number: Schema.Int,
+  number: ChangeRequestNumber,
   node_id: Schema.optional(Schema.NullOr(Schema.String)),
   url: Schema.String,
   html_url: Schema.optional(Schema.NullOr(Schema.String)),
@@ -1926,14 +1930,14 @@ export interface GitHubPullRequestStackLayer {
   readonly title?: string;
   readonly isDraft?: boolean;
   readonly headSha?: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly headBranch: string;
   readonly state: PullRequestState;
 }
 
 export interface GitHubPullRequestStack {
   readonly id: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly url: string;
   readonly base: string;
   readonly layers: ReadonlyArray<GitHubPullRequestStackLayer>;

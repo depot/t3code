@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { resolvePullRequestAuthorFilter, SourceControlProviderKind } from "@t3tools/contracts";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -216,7 +217,7 @@ export const make = Effect.gen(function* () {
     >
   >();
 
-  const readPullRequest = (input: { readonly cwd: string; readonly number: number }) =>
+  const readPullRequest = (input: { readonly cwd: string; readonly number: ChangeRequestNumber }) =>
     Effect.suspend(() => {
       const key = `${input.cwd} ${input.number}`;
       const pending = Deferred.makeUnsafe<
@@ -243,7 +244,7 @@ export const make = Effect.gen(function* () {
       );
     });
 
-  const locationOf = (input: { readonly cwd: string; readonly number: number }) =>
+  const locationOf = (input: { readonly cwd: string; readonly number: ChangeRequestNumber }) =>
     Effect.suspend(() => {
       const key = `${input.cwd} ${input.number}`;
       const held = recall(locations, key);
@@ -268,7 +269,7 @@ export const make = Effect.gen(function* () {
   /** A later slice names its iteration, which the list it was cut from already holds. */
   const diffScope = Effect.fn("AzureDevOpsPullRequestProvider.diffScope")(function* (input: {
     readonly cwd: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly iterationId?: number;
   }) {
     const location = yield* locationOf(input);
@@ -293,7 +294,7 @@ export const make = Effect.gen(function* () {
   const changesOf = (input: {
     readonly cwd: string;
     readonly location: AzureDevOpsRepositoryLocation;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly iterationId: number;
   }) => {
     const key = `${input.cwd} ${input.number} ${input.iterationId}`;
@@ -348,7 +349,7 @@ export const make = Effect.gen(function* () {
   const listLatestChanges = (input: {
     readonly cwd: string;
     readonly location: AzureDevOpsRepositoryLocation;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly iterations: ReadonlyArray<AzureDevOpsIteration>;
   }) => {
     const latest = input.iterations.at(-1);

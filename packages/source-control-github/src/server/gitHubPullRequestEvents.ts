@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { normalizeHost } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as Clock from "effect/Clock";
 import * as Duration from "effect/Duration";
@@ -57,7 +58,7 @@ const endingOf = (data: string): Ending =>
 export interface PullRequestEventsInput {
   readonly host: string;
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
 }
 
 /**

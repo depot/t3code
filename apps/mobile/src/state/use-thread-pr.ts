@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
 import {
@@ -34,7 +35,11 @@ const pullRequestSnapshotsAtom = Atom.make<ReadonlyMap<string, PullRequestSummar
 
 function snapshotKey(
   environmentId: EnvironmentId,
-  reference: { readonly projectId: string; readonly repository: string; readonly number: number },
+  reference: {
+    readonly projectId: string;
+    readonly repository: string;
+    readonly number: ChangeRequestNumber;
+  },
 ): string {
   return JSON.stringify([
     environmentId,
@@ -64,7 +69,11 @@ export { type ThreadPr, type ThreadPrPresentation } from "./thread-pr-presentati
 
 /** Seeds a pull request page with a summary already in memory, never another pull request's. */
 export function withKnownPullRequestSummary<
-  Params extends { readonly host?: string; readonly repository: string; readonly number: number },
+  Params extends {
+    readonly host?: string;
+    readonly repository: string;
+    readonly number: ChangeRequestNumber;
+  },
 >(params: Params) {
   const initialSummary =
     params.host === undefined

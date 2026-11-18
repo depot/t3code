@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { PullRequestProviderError } from "@t3tools/source-control-core/server/PullRequestProvider";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import { limitRecoveryCommand } from "./UsageLimitRecoveryWorker.ts";
@@ -231,7 +232,7 @@ const layerTestProviderInstanceRegistry = Layer.succeed(
 
 const watchedPullRequestDetail = (input: {
   readonly projectId: ProjectId;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly at: string;
 }): PullRequestDetail => ({
   provider: SourceControlProviderKind.make("github"),
@@ -3989,6 +3990,33 @@ it.layer(layerTest)("OrchestrationV2LayerLive lifecycle", (it) => {
         (yield* orchestrator.getThreadShell(threadId))?.pullRequests?.map((link) => link.number),
         [2, 3, 4],
       );
+      const depot = { host: "depot.dev", repository: "org1/repo1", number: "mr_abc123" };
+      yield* orchestrator.dispatch({
+        type: "thread.pull-request.link",
+        commandId: CommandId.make("depot-link"),
+        threadId,
+        ...depot,
+        url: "https://depot.dev/orgs/org1/code/repositories/repo1/merge-requests?id=mr_abc123",
+        source: "manual",
+      });
+      assert.isTrue((yield* maintenance.rebuild).valid);
+      assert.include(
+        (yield* orchestrator.getThreadShell(threadId))?.pullRequests?.map((link) => link.number) ??
+          [],
+        depot.number,
+      );
+      yield* orchestrator.dispatch({
+        type: "thread.pull-request.unlink",
+        commandId: CommandId.make("depot-unlink"),
+        threadId,
+        ...depot,
+      });
+      assert.isTrue((yield* maintenance.rebuild).valid);
+      assert.notInclude(
+        (yield* orchestrator.getThreadShell(threadId))?.pullRequests?.map((link) => link.number) ??
+          [],
+        depot.number,
+      );
       for (const [index, route] of ["pull", "pulls"].entries()) {
         yield* orchestrator.dispatch({
           type: "thread.pull-request.link",
@@ -6525,7 +6553,7 @@ it.layer(layerTest)("OrchestrationV2LayerLive lifecycle", (it) => {
         });
       }
       const at = "2026-10-02T12:00:00.000Z";
-      const readHead = (number: number) =>
+      const readHead = (number: ChangeRequestNumber) =>
         orchestrator
           .getThreadShell(ThreadId.make(`runtime-pull-request-watch-pipeline-${number}`))
           .pipe(Effect.map((thread) => thread?.pullRequests?.[0]?.watch?.headSha));

@@ -103,7 +103,13 @@ export function PullRequestComposer({
         align="end"
         sideOffset={8}
         width="lg"
-        initialFocus={mode === "review" ? reviewRef : commentRef}
+        initialFocus={
+          mode === "review"
+            ? detail.capabilities.review.summary === false
+              ? undefined
+              : reviewRef
+            : commentRef
+        }
         aria-label={`${capitalizeTerm(term)} composer`}
       >
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -155,6 +161,9 @@ export function PullRequestComposer({
               active={open && mode === "review"}
               environmentId={environmentId}
               reference={reference}
+              headOid={detail.headSha}
+              summarySupported={detail.capabilities.review.summary !== false}
+              batchSupported={detail.capabilities.review.batch !== false}
               completionScope={pullRequestCompletionScope(detail, environmentId, reference)}
               term={term}
               verdicts={verdicts}

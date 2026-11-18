@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   backgroundWorkHoldsCompletion,
   isPullRequestWatchTask,
@@ -327,7 +328,7 @@ export const make = Effect.gen(function* () {
   const quietReadKey = (reference: {
     readonly projectId: string;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }) => `${reference.projectId}\0${reference.repository.toLowerCase()}\0${reference.number}`;
   // A host can finish a merge minutes after the app's merge action and its refresh, and Azure's
   // updatedAt never moves while open, so pull requests stay on the fast cadence for a while after.

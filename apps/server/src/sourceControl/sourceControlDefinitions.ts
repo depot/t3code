@@ -1,3 +1,4 @@
+import * as DepotDriver from "@t3tools/source-control-depot/server/driver";
 import * as AzureDevOpsDriver from "@t3tools/source-control-azure-devops/server/driver";
 import * as BitbucketDriver from "@t3tools/source-control-bitbucket/server/driver";
 import * as CursorOriginDriver from "@t3tools/source-control-cursor-origin/server/driver";
@@ -11,6 +12,7 @@ import * as GitLabDriver from "@t3tools/source-control-gitlab/server/driver";
 export const BUILT_IN_SOURCE_CONTROL_DRIVER_LIST = [
   GitHubDriver.driver,
   CursorOriginDriver.driver,
+  DepotDriver.driver,
   GitLabDriver.driver,
   GitCafeDriver.driver,
   ForgejoDriver.driver,

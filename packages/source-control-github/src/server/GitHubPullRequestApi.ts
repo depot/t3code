@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import { isCommitSha, normalizeHost } from "@t3tools/source-control-core/server/pullRequestUtils";
 import {
   diffFileSection,
@@ -185,7 +186,7 @@ export class GitHubDiffRevisionsUnavailableError extends Schema.TaggedError<GitH
   "GitHubDiffRevisionsUnavailableError",
   {
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
     commit: Schema.optional(Schema.String),
   },
 ) {
@@ -239,7 +240,7 @@ export class GitHubWorkflowApprovalRefusedError extends Schema.TaggedError<GitHu
   "GitHubWorkflowApprovalRefusedError",
   {
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
     reason: Schema.Literals(["head-list-truncated", "head-not-unique", "run-list-truncated"]),
     observedCount: Schema.Int,
     limit: Schema.Int,
@@ -260,7 +261,7 @@ export class GitHubWorkflowApprovalHeadUnavailableError extends Schema.TaggedErr
   "GitHubWorkflowApprovalHeadUnavailableError",
   {
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
   },
 ) {
   override get message(): string {
@@ -272,7 +273,7 @@ export class GitHubWorkflowApprovalHeadChangedError extends Schema.TaggedError<G
   "GitHubWorkflowApprovalHeadChangedError",
   {
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
   },
 ) {
   override get message(): string {
@@ -283,7 +284,7 @@ export class GitHubWorkflowApprovalHeadChangedError extends Schema.TaggedError<G
 export class GitHubBranchDeletionRefusedError extends Schema.TaggedError<GitHubBranchDeletionRefusedError>()(
   "GitHubBranchDeletionRefusedError",
   {
-    number: Schema.Int,
+    number: ChangeRequestNumber,
     reason: Schema.Literals([
       "open-pr",
       "stack",
@@ -456,7 +457,7 @@ export interface GitHubPullRequestListBatch {
 
 export interface GitHubPullRequestStat {
   readonly repository: string;
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly additions: number;
   readonly deletions: number;
 }
@@ -544,7 +545,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly host: string;
       readonly changeRequests: ReadonlyArray<{
         readonly repository: string;
-        readonly number: number;
+        readonly number: ChangeRequestNumber;
       }>;
     }) => Effect.Effect<ReadonlyArray<GitHubPullRequestStat>, GitHubPullRequestApiError>;
 
@@ -552,14 +553,14 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ProviderChangeRequestSummary, GitHubPullRequestApiError>;
     /** Null triggers a full watch read when GitHub gives no answer. */
     readonly getPullRequestWatchFingerprint: (input: {
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubPullRequestWatchFingerprint | null, GitHubPullRequestApiError>;
     readonly pullRequestEvents: Effect.Success<typeof GitHubPullRequestEvents.make>;
 
@@ -569,14 +570,14 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubPullRequestCore, GitHubPullRequestApiError>;
 
     readonly getPullRequestPreview: (input: {
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<
       Omit<PullRequestPreview, "projectId" | "repository">,
       GitHubPullRequestApiError
@@ -586,7 +587,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly headSha: string;
       readonly headBranch: string;
       readonly headRepositoryOwner: string;
@@ -606,21 +607,21 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly includeDetails?: boolean;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubPullRequestStack | null, GitHubPullRequestApiError>;
 
     readonly getPullRequestActivity: (input: {
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubPullRequestActivity, GitHubPullRequestApiError>;
 
     readonly getPullRequestDiff: (input: {
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly cursor?: string | undefined;
       readonly commit?: string | undefined;
       readonly path?: string | undefined;
@@ -630,7 +631,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commit?: string | undefined;
       readonly changeType: "change" | "rename-pure" | "rename-changed" | "new" | "deleted";
       readonly oldPath: string;
@@ -644,14 +645,14 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubPullRequestFilesViewed, GitHubPullRequestApiError>;
 
     readonly getPullRequestFileStats: (input: {
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubPullRequestFileStats, GitHubPullRequestApiError>;
 
     /**
@@ -662,7 +663,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly files: ReadonlyArray<{ readonly path: string; readonly viewed: boolean }>;
     }) => Effect.Effect<void, GitHubPullRequestApiError>;
 
@@ -670,14 +671,14 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitHubReviewThreadComments, GitHubPullRequestApiError>;
 
     readonly getReviewThreadComments: (input: {
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly threadId: string;
       readonly cursor: string;
     }) => Effect.Effect<PullRequestThreadCommentsResult, GitHubPullRequestApiError>;
@@ -686,7 +687,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly allowReserve?: boolean | undefined;
     }) => Effect.Effect<GitHubViewerAccess & GitHubRepositoryAccess, GitHubPullRequestApiError>;
 
@@ -694,7 +695,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly query?: string | undefined;
     }) => Effect.Effect<PullRequestReviewerCandidateList, GitHubPullRequestApiError>;
 
@@ -702,7 +703,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly reviewers: ReadonlyArray<{
         readonly id: string;
         readonly kind: PullRequestReviewerKind;
@@ -714,7 +715,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<PullRequestLabelCandidateList, GitHubPullRequestApiError>;
 
     readonly listRepositoryLabels: (input: {
@@ -754,7 +755,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly labels: ReadonlyArray<string>;
       readonly applied: boolean;
     }) => Effect.Effect<void, GitHubPullRequestApiError>;
@@ -763,9 +764,9 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly action: PullRequestAction;
-      readonly stackNumber?: number;
+      readonly stackNumber?: ChangeRequestNumber;
       readonly expectedStackHeads?: ReadonlyArray<PullRequestStackHead>;
       readonly removeAgentCreditsOnMerge?: boolean;
       readonly mergeMethod?: PullRequestMergeMethod;
@@ -776,7 +777,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly body: string;
     }) => Effect.Effect<void, GitHubPullRequestApiError>;
 
@@ -784,7 +785,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly verdict: PullRequestReviewVerdict;
       readonly body: string;
       readonly comments: ReadonlyArray<PullRequestReviewCommentDraft>;
@@ -810,7 +811,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly subjectId?: string | undefined;
       readonly content: PullRequestReactionContent;
       readonly reacted: boolean;
@@ -821,7 +822,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly title?: string | undefined;
       readonly body?: string | undefined;
     }) => Effect.Effect<void, GitHubPullRequestApiError>;
@@ -830,7 +831,7 @@ export class GitHubPullRequestApi extends Context.Service<
       readonly cwd: string;
       readonly repository: string;
       readonly host: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commentId: string;
       readonly kind: "issue-comment" | "review-comment";
       readonly body: string;
@@ -1211,7 +1212,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly repository: string;
     readonly host: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly operation: string;
   }): Effect.Effect<string, GitHubPullRequestApiError> => {
     const { owner, name } = parseRepositorySelector(input.repository);
@@ -1222,7 +1223,7 @@ export const make = Effect.gen(function* () {
       nodeIds.set(key, held);
       return Effect.succeed(held);
     }
-    return client.PullRequestNodeId({ owner, name, number: input.number }).pipe(
+    return client.PullRequestNodeId({ owner, name, number: Number(input.number) }).pipe(
       graphql({ ...input, allowReserve: true }),
       Effect.map(toPullRequestNodeId),
       Effect.flatMap(found(input)),
@@ -1243,13 +1244,13 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly repository: string;
     readonly host: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly subjectId: string;
     readonly operation: string;
   }) => {
     const { owner, name } = parseRepositorySelector(input.repository);
     return client
-      .PullRequestSubject({ owner, name, number: input.number, subjectId: input.subjectId })
+      .PullRequestSubject({ owner, name, number: Number(input.number), subjectId: input.subjectId })
       .pipe(graphql({ ...input, allowReserve: true }), Effect.map(isSubjectOfPullRequest));
   };
 
@@ -1322,7 +1323,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly repository: string;
     readonly host: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly page: number;
     readonly commit?: string | undefined;
   }): Effect.Effect<GitHubPullRequestDiffSlice, GitHubPullRequestApiError> => {
@@ -1408,7 +1409,7 @@ export const make = Effect.gen(function* () {
       ) {
         return yield* new GitHubDiffRevisionsUnavailableError({
           cwd: input.cwd,
-          number: input.number,
+          number: Number(input.number),
           ...(input.commit === undefined ? {} : { commit: input.commit }),
         });
       }
@@ -1495,7 +1496,7 @@ export const make = Effect.gen(function* () {
         .PullRequestCheckContexts({
           owner,
           name,
-          number: input.number,
+          number: Number(input.number),
           required: asksRequired(input.host),
           after,
         })
@@ -1524,7 +1525,11 @@ export const make = Effect.gen(function* () {
   });
   const readRequestedReviewers = Effect.fn("GitHubPullRequestApi.readRequestedReviewers")(
     function* <A, E, R>(
-      input: { readonly host: string; readonly repository: string; readonly number: number },
+      input: {
+        readonly host: string;
+        readonly repository: string;
+        readonly number: ChangeRequestNumber;
+      },
       wanted: number,
       read: (requestedReviewers: number) => Effect.Effect<A, E, R>,
     ) {
@@ -1548,7 +1553,7 @@ export const make = Effect.gen(function* () {
         .PullRequestCore({
           owner,
           name,
-          number: input.number,
+          number: Number(input.number),
           headRef: `refs/pull/${input.number}/head`,
           required: asksRequired(input.host),
           requestedReviewers,
@@ -1686,7 +1691,7 @@ export const make = Effect.gen(function* () {
                   return Effect.fail(
                     new GitHubWorkflowApprovalRefusedError({
                       cwd: input.cwd,
-                      number: input.number,
+                      number: Number(input.number),
                       reason: "head-list-truncated",
                       observedCount: heads.length,
                       limit: workflowApprovalLimit,
@@ -1697,7 +1702,7 @@ export const make = Effect.gen(function* () {
                   return Effect.fail(
                     new GitHubWorkflowApprovalRefusedError({
                       cwd: input.cwd,
-                      number: input.number,
+                      number: Number(input.number),
                       reason: "head-not-unique",
                       observedCount: exactHeads.length,
                       limit: workflowApprovalLimit,
@@ -1714,7 +1719,7 @@ export const make = Effect.gen(function* () {
               (runs) =>
                 new GitHubWorkflowApprovalRefusedError({
                   cwd: input.cwd,
-                  number: input.number,
+                  number: Number(input.number),
                   reason: "run-list-truncated",
                   observedCount: runs.length,
                   limit: workflowApprovalLimit,
@@ -2116,7 +2121,7 @@ export const make = Effect.gen(function* () {
         const { owner, name } = parseRepositorySelector(input.repository);
         const operation = "getPullRequestPreview";
         return client
-          .PullRequestPreview({ owner, name, number: input.number })
+          .PullRequestPreview({ owner, name, number: Number(input.number) })
           .pipe(
             graphql({ ...input, operation }),
             Effect.map(toPullRequestPreview),
@@ -2186,7 +2191,7 @@ export const make = Effect.gen(function* () {
             .PullRequestActivity({
               owner,
               name,
-              number: input.number,
+              number: Number(input.number),
               head: page === 0,
               withComments,
               commentsAfter,
@@ -2247,7 +2252,7 @@ export const make = Effect.gen(function* () {
           cwd: input.cwd,
           repository: input.repository,
           host: input.host,
-          number: input.number,
+          number: Number(input.number),
           page,
           ...(input.commit === undefined ? {} : { commit: input.commit }),
         });
@@ -2335,7 +2340,7 @@ export const make = Effect.gen(function* () {
           .ReviewThreadComments({
             owner,
             name,
-            number: input.number,
+            number: Number(input.number),
             threadId: input.threadId,
             after: input.cursor,
           })
@@ -2364,7 +2369,7 @@ export const make = Effect.gen(function* () {
           input,
           50,
           (requestedReviewers) =>
-            client.ReviewThreads({ owner, name, number: input.number, requestedReviewers }),
+            client.ReviewThreads({ owner, name, number: Number(input.number), requestedReviewers }),
         ).pipe(graphql(target), Effect.map(toReviewThreadPage), Effect.flatMap(found(target)));
         const entries: GitHubReviewThreadEntry[] = [...first.threads];
         const avatarsByLogin = new Map(first.avatarsByLogin);
@@ -2380,7 +2385,7 @@ export const make = Effect.gen(function* () {
             GitHubReviewThreadPage,
             "threads" | "nextCursor" | "avatarsByLogin" | "botLogins"
           > = yield* client
-            .ReviewThreadPages({ owner, name, number: input.number, after: cursor })
+            .ReviewThreadPages({ owner, name, number: Number(input.number), after: cursor })
             .pipe(
               graphql(target),
               Effect.map(toLaterReviewThreadPage),
@@ -2407,7 +2412,7 @@ export const make = Effect.gen(function* () {
               readonly dismissalsByReviewId: ReadonlyMap<string, string>;
               readonly nextCursor: string | null;
             } = yield* client
-              .ReviewDismissals({ owner, name, number: input.number, after })
+              .ReviewDismissals({ owner, name, number: Number(input.number), after })
               .pipe(
                 graphql(target),
                 Effect.map(toReviewDismissalsPage),
@@ -2451,7 +2456,7 @@ export const make = Effect.gen(function* () {
       const { owner, name } = parseRepositorySelector(input.repository);
       const operation = "getViewerAccess";
       return client
-        .ViewerPermissions({ owner, name, number: input.number })
+        .ViewerPermissions({ owner, name, number: Number(input.number) })
         .pipe(
           graphql({ ...input, operation }),
           Effect.map(toViewerPermissions),
@@ -2464,7 +2469,12 @@ export const make = Effect.gen(function* () {
         const { owner, name } = parseRepositorySelector(input.repository);
         const operation = "listReviewerCandidates";
         return client
-          .ReviewerCandidates({ owner, name, number: input.number, query: input.query ?? null })
+          .ReviewerCandidates({
+            owner,
+            name,
+            number: Number(input.number),
+            query: input.query ?? null,
+          })
           .pipe(
             graphql({ ...input, operation, allowReserve: true }),
             Effect.map((result) => toReviewerCandidates(result, input.query)),
@@ -2490,7 +2500,7 @@ export const make = Effect.gen(function* () {
       const { owner, name } = parseRepositorySelector(input.repository);
       const operation = "listLabelCandidates";
       return client
-        .LabelCandidates({ owner, name, number: input.number })
+        .LabelCandidates({ owner, name, number: Number(input.number) })
         .pipe(
           graphql({ ...input, operation, allowReserve: true }),
           Effect.map(toLabelCandidates),
@@ -2582,14 +2592,14 @@ export const make = Effect.gen(function* () {
         return Effect.gen(function* () {
           if (input.stackNumber !== undefined) {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "stack",
             });
           }
           const { owner, name } = parseRepositorySelector(input.repository);
           const target = { ...input, operation: "deletePullRequestBranch" };
           const branch = yield* client
-            .PullRequestBranchToDelete({ owner, name, number: input.number })
+            .PullRequestBranchToDelete({ owner, name, number: Number(input.number) })
             .pipe(
               graphql({ ...target, allowReserve: true }),
               Effect.map((result) => result.repository?.pullRequest ?? null),
@@ -2597,20 +2607,20 @@ export const make = Effect.gen(function* () {
             );
           if (branch.state === "OPEN") {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "open-pr",
             });
           }
           const repositoryId = branch.headRepository?.id;
           if (!repositoryId || !branch.headRefName || !branch.headRefOid) {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "source-unavailable",
             });
           }
           if (branch.headRefName === branch.baseRefName) {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "unsafe-branch",
             });
           }
@@ -2621,7 +2631,7 @@ export const make = Effect.gen(function* () {
           const repository = source.node?.__typename === "Repository" ? source.node : null;
           if (repository === null) {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "source-unavailable",
             });
           }
@@ -2631,13 +2641,13 @@ export const make = Effect.gen(function* () {
             branch.headRefName === repository.defaultBranchRef.name
           ) {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "unsafe-branch",
             });
           }
           if (repository.ref.target?.oid !== branch.headRefOid) {
             return yield* new GitHubBranchDeletionRefusedError({
-              number: input.number,
+              number: Number(input.number),
               reason: "head-changed",
             });
           }
@@ -2685,7 +2695,7 @@ export const make = Effect.gen(function* () {
               return Effect.fail(
                 new GitHubWorkflowApprovalHeadUnavailableError({
                   cwd: input.cwd,
-                  number: input.number,
+                  number: Number(input.number),
                 }),
               );
             }
@@ -2709,7 +2719,7 @@ export const make = Effect.gen(function* () {
                           return Effect.fail(
                             new GitHubWorkflowApprovalHeadUnavailableError({
                               cwd: input.cwd,
-                              number: input.number,
+                              number: Number(input.number),
                             }),
                           );
                         }
@@ -2723,7 +2733,7 @@ export const make = Effect.gen(function* () {
                           return Effect.fail(
                             new GitHubWorkflowApprovalHeadChangedError({
                               cwd: input.cwd,
-                              number: input.number,
+                              number: Number(input.number),
                             }),
                           );
                         }
@@ -2774,7 +2784,7 @@ export const make = Effect.gen(function* () {
           .PullRequestActionState({
             owner,
             name,
-            number: input.number,
+            number: Number(input.number),
             headRef: `refs/pull/${input.number}/head`,
           })
           .pipe(
@@ -2804,7 +2814,7 @@ export const make = Effect.gen(function* () {
             .PullRequestMergeMessage({
               owner,
               name,
-              number: input.number,
+              number: Number(input.number),
               method: input.mergeMethod === "squash" ? "SQUASH" : "MERGE",
             })
             .pipe(
@@ -2885,7 +2895,7 @@ export const make = Effect.gen(function* () {
         const target = { ...input, operation: "getPullRequestFilesViewed" };
         return readPages(
           GraphQLClient.pages(client.PullRequestFilesViewed, {
-            variables: { owner, name, number: input.number },
+            variables: { owner, name, number: Number(input.number) },
             connection: (result) => {
               const page = toPullRequestFilesViewedPage(result);
               return {
@@ -2915,7 +2925,7 @@ export const make = Effect.gen(function* () {
         const target = { ...input, operation: "getPullRequestFileStats" };
         return readPages(
           GraphQLClient.pages(client.PullRequestFileStats, {
-            variables: { owner, name, number: input.number },
+            variables: { owner, name, number: Number(input.number) },
             connection: (result) => {
               const page = toPullRequestFileStatsPage(result);
               return {
@@ -3027,7 +3037,7 @@ export const make = Effect.gen(function* () {
         cwd: input.cwd,
         repository: input.repository,
         host: input.host,
-        number: input.number,
+        number: Number(input.number),
         subjectId: input.commentId,
         operation: "updateComment",
       }).pipe(

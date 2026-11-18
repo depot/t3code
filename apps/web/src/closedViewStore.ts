@@ -1,3 +1,5 @@
+import { isChangeRequestNumber } from "@t3tools/contracts";
+import * as Schema from "effect/Schema";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import {
   ChatFileAttachment,
@@ -5,7 +7,6 @@ import {
   PreviewSessionSnapshot,
   ScopedThreadRef,
 } from "@t3tools/contracts";
-import * as Schema from "effect/Schema";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -89,8 +90,7 @@ const isClosedViewEntry = (entry: unknown): entry is ClosedViewEntry => {
       return (
         typeof surface.projectId === "string" &&
         typeof surface.repository === "string" &&
-        Number.isSafeInteger(surface.number) &&
-        surface.number > 0 &&
+        isChangeRequestNumber(surface.number) &&
         (surface.environmentId === undefined || typeof surface.environmentId === "string") &&
         (surface.host === undefined || typeof surface.host === "string") &&
         (surface.url === undefined || typeof surface.url === "string")

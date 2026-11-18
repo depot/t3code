@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
@@ -76,7 +77,7 @@ function project(input: {
   };
 }
 
-function changeRequest(number: number, updatedAt: string): ProviderChangeRequest {
+function changeRequest(number: ChangeRequestNumber, updatedAt: string): ProviderChangeRequest {
   return {
     number,
     title: `Change request ${number}`,
@@ -499,7 +500,7 @@ it.effect("tries another checkout when provider refinement remains unknown", () 
   }),
 );
 
-function batchedChangeRequest(number: number, repository: string, updatedAt: string) {
+function batchedChangeRequest(number: ChangeRequestNumber, repository: string, updatedAt: string) {
   return { ...changeRequest(number, updatedAt), repository };
 }
 
@@ -2187,7 +2188,7 @@ it.effect("routes a hosted reference to another repository through a project on 
 
     // A sync sweep resolves the project once for all of its references, then reads fresh again.
     const readsPerReference = projectReads;
-    const read = (number: number) =>
+    const read = (number: ChangeRequestNumber) =>
       service.summary(
         { projectId: "frontend" as ProjectId, host: "github.com", repository: "acme/api", number },
         { recoverTransientFailure: false },
@@ -2767,8 +2768,9 @@ it.effect("a finished turn leaves another project's cached listing in place", ()
 
 it.effect("a refresh or a finished turn drops the provider's own change request reads", () =>
   Effect.gen(function* () {
-    const forgotten: Array<{ readonly repository: string; readonly number?: number } | undefined> =
-      [];
+    const forgotten: Array<
+      { readonly repository: string; readonly number?: ChangeRequestNumber } | undefined
+    > = [];
     const service = yield* makeService({
       projects: [
         project({
@@ -3817,7 +3819,11 @@ it.effect("does not let a stale detail reopen overwrite a fresher linked summary
 
 it.effect("keeps a row of a host that ignored the filters if any name of a label group holds", () =>
   Effect.gen(function* () {
-    const sized = (number: number, updatedAt: string, ...names: ReadonlyArray<string>) => ({
+    const sized = (
+      number: ChangeRequestNumber,
+      updatedAt: string,
+      ...names: ReadonlyArray<string>
+    ) => ({
       ...changeRequest(number, updatedAt),
       labels: names.map((name) => ({ name, color: null })),
     });
@@ -4055,7 +4061,10 @@ it.effect("keeps reading a host's thinned-out slices until a filtered page is fu
   }),
 );
 
-it.effect("hands a host's own resume position back on the next read", () =>
+it.effect.each([
+  { native: false, token: "2026-07-01T00:00:00.000Z~1" },
+  { native: true, token: "dGVzdA+/==" },
+])("hands a host's own resume position back on the next read ($native)", ({ native, token }) =>
   Effect.gen(function* () {
     const resumed: Array<string | undefined> = [];
     const service = yield* makeService({
@@ -4073,10 +4082,15 @@ it.effect("hands a host's own resume position back on the next read", () =>
           listChangeRequests: (input) => {
             resumed.push(input.cursor?.resumeAfter);
             return Effect.succeed({
-              items: [changeRequest(resumed.length, "2026-07-02T00:00:00Z")],
+              items: [
+                changeRequest(
+                  native ? `mr_page${resumed.length}` : resumed.length,
+                  "2026-07-02T00:00:00Z",
+                ),
+              ],
               truncated: true,
               continues: true,
-              resumeAfter: `2026-07-01T00:00:00.000Z~${resumed.length}`,
+              resumeAfter: token,
             });
           },
         }),
@@ -4085,7 +4099,7 @@ it.effect("hands a host's own resume position back on the next read", () =>
 
     const first = yield* service.list({ state: "open", limit: 1 });
     yield* service.list({ state: "open", limit: 1, cursors: first.nextCursors });
-    assert.deepStrictEqual(resumed, [undefined, "2026-07-01T00:00:00.000Z~1"]);
+    assert.deepStrictEqual(resumed, [undefined, token]);
   }),
 );
 
@@ -5235,5 +5249,76 @@ it.effect.each(["expiry", "commit expiry", "cache hit", "commit cache hit", "ref
       assert.strictEqual(error._tag, "PullRequestOperationError");
       assert.strictEqual(error.reason, "not-found");
       assert.strictEqual(diffReads, 2);
+    }),
+);
+
+it.effect(
+  "guarded approvals keep the reviewed head and refresh cached review state after approval or withdrawal",
+  () =>
+    Effect.gen(function* () {
+      let approved = false;
+      let head = "a".repeat(40);
+      const reference = { projectId: "p1" as ProjectId, repository: "acme/web", number: 1 };
+      const base = fakePullRequestProvider("github");
+      const service = yield* makeService({
+        projects: [
+          project({ id: "p1", title: "web", workspaceRoot: "/a", repository: "acme/web" }),
+        ],
+        providers: [
+          fakePullRequestProvider("github", {
+            capabilities: {
+              ...base.capabilities,
+              actions: [...base.capabilities.actions, "withdraw-approval"],
+              review: { ...base.capabilities.review, summary: false },
+            },
+            getViewerPermissions: () =>
+              Effect.succeed({
+                actions: ["withdraw-approval"],
+                verdicts: ["approve"],
+                comment: false,
+                resolve: false,
+                requestReviewers: false,
+              }),
+            getChangeRequestSummary: () =>
+              Effect.succeed({
+                ...changeRequest(1, "2026-11-17T00:00:00Z"),
+                headSha: head,
+                reviewDecision: approved ? "approved" : null,
+              }),
+            submitReview: (input) =>
+              Effect.gen(function* () {
+                if (input.expectedHeadOid !== head)
+                  return yield* new PullRequestProviderError({
+                    provider: SourceControlProviderKind.make("github"),
+                    operation: "approve",
+                    reason: "failed",
+                    detail: "Head moved",
+                  });
+                approved = true;
+              }),
+            runAction: () =>
+              Effect.sync(() => {
+                approved = false;
+              }),
+          }),
+        ],
+      });
+      const review = {
+        ...reference,
+        verdict: "approve" as const,
+        expectedHeadOid: head,
+        body: "",
+        comments: [],
+      };
+      assert.isNull((yield* service.summary(reference)).reviewDecision);
+      yield* Effect.flip(service.submitReview({ ...review, body: "Do not drop my summary" }));
+      assert.isFalse(approved);
+      yield* service.submitReview(review);
+      assert.strictEqual((yield* service.summary(reference)).reviewDecision, "approved");
+      yield* service.runAction({ ...reference, action: "withdraw-approval" });
+      assert.isNull((yield* service.summary(reference)).reviewDecision);
+      head = "b".repeat(40);
+      yield* Effect.flip(service.submitReview(review));
+      assert.isFalse(approved);
     }),
 );

@@ -52,6 +52,8 @@ export function clearSubmittedReview(current: ReviewDraft, submitted: ReviewDraf
             saved.id === comment.id &&
             saved.body === comment.body &&
             saved.headSha === comment.headSha &&
+            saved.reviewRevision?.headOid === comment.reviewRevision?.headOid &&
+            saved.reviewRevision?.baseOid === comment.reviewRevision?.baseOid &&
             saved.path === comment.path &&
             saved.oldPath === comment.oldPath &&
             saved.code === comment.code &&

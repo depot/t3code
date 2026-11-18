@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "./baseSchemas.ts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import {
@@ -97,7 +98,7 @@ const VcsWorktree = Schema.Struct({
   refName: TrimmedNonEmptyStringSchema,
 });
 const GitResolvedPullRequest = Schema.Struct({
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyStringSchema,
   url: Schema.String,
   baseBranch: TrimmedNonEmptyStringSchema,
@@ -210,7 +211,7 @@ export const VcsInitInput = Schema.Struct({
 export type VcsInitInput = typeof VcsInitInput.Type;
 
 const VcsStatusChangeRequest = Schema.Struct({
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyStringSchema,
   url: Schema.String,
   baseRef: TrimmedNonEmptyStringSchema,
@@ -338,7 +339,7 @@ export const GitRunStackedActionResult = Schema.Struct({
   pr: Schema.Struct({
     status: GitPrStepStatus,
     url: Schema.optional(Schema.String),
-    number: Schema.optional(PositiveInt),
+    number: Schema.optional(ChangeRequestNumber),
     baseBranch: Schema.optional(TrimmedNonEmptyStringSchema),
     headBranch: Schema.optional(TrimmedNonEmptyStringSchema),
     title: Schema.optional(TrimmedNonEmptyStringSchema),
@@ -421,7 +422,7 @@ export class GitPullRequestMaterializationError extends Schema.TaggedError<GitPu
   "GitPullRequestMaterializationError",
   {
     cwd: TrimmedNonEmptyStringSchema,
-    pullRequestNumber: PositiveInt,
+    pullRequestNumber: ChangeRequestNumber,
     headRepository: Schema.NullOr(TrimmedNonEmptyStringSchema),
     headBranch: TrimmedNonEmptyStringSchema,
     localBranch: TrimmedNonEmptyStringSchema,

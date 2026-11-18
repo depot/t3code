@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import {
@@ -162,7 +163,7 @@ export interface RightPanelTabsProps {
 export interface PullRequestTabStatus {
   projectId: string;
   repository: string;
-  number: number;
+  number: ChangeRequestNumber;
   state: PullRequestState;
   isDraft: boolean;
 }
@@ -736,7 +737,7 @@ export function resolvePullRequestTabLink(
   threads: readonly Pick<EnvironmentThreadShell, "environmentId" | "pullRequests">[],
   environmentId: EnvironmentId | null,
   host: string | null,
-  reference: { repository: string; number: number },
+  reference: { repository: string; number: ChangeRequestNumber },
 ) {
   if (environmentId === null || host === null) return undefined;
   // Keys are cached per object, so one target normalizes once instead of once per link.

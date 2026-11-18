@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { MenuGroupLabel } from "../ui/menu";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -6,7 +7,7 @@ export function PullRequestStackHeader({
   notice,
   stale = false,
 }: {
-  number: number;
+  number: ChangeRequestNumber;
   notice?: string | null | undefined;
   stale?: boolean;
 }) {

@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 /** Shared ranking keeps command palettes and MCP thread search consistent across surfaces. */
 
 import type { OrchestrationV2ThreadOpens } from "@t3tools/contracts";
@@ -813,7 +814,7 @@ export interface ThreadSearchSubject {
   /** Only set with two or more environments; it tells same-named threads apart. */
   readonly environmentLabel?: string | null;
   readonly pullRequests?: ReadonlyArray<{
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly title?: string | null;
     /** Values such as URLs, matched only by the whole query. */
     readonly references?: ReadonlyArray<string>;

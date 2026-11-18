@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { resolvePullRequestAuthorFilter, SourceControlProviderKind } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -75,9 +76,9 @@ const UNAVAILABLE_REQUIREMENT = {
 
 const repoPath = (input: ProviderRepositoryRef) =>
   `repos/${input.repository.split("/").map(encodeURIComponent).join("/")}`;
-const pullPath = (input: ProviderRepositoryRef & { readonly number: number }) =>
+const pullPath = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
   `${repoPath(input)}/pulls/${input.number}`;
-const issuePath = (input: ProviderRepositoryRef & { readonly number: number }) =>
+const issuePath = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
   `${repoPath(input)}/issues/${input.number}`;
 // Review IDs differ from the issue-comment IDs used by Forgejo's reactions API.
 const reviewCommentId = (review: typeof ForgejoReview.Type) =>
@@ -191,7 +192,7 @@ export const make = Effect.gen(function* () {
     return { items, truncated: true };
   });
   const write = (input: ForgejoCli.ForgejoApiInput) => request(input).pipe(Effect.asVoid);
-  const getPull = (input: ProviderRepositoryRef & { readonly number: number }) =>
+  const getPull = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
     read(
       {
         cwd: input.cwd,
@@ -236,7 +237,7 @@ export const make = Effect.gen(function* () {
     };
   };
   const getPermissions = Effect.fn("ForgejoPullRequestProvider.getPermissions")(function* (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) {
     const [repo, pr, viewer] = yield* Effect.all(
       [getRepo(input), getPull(input), getViewer(input)],

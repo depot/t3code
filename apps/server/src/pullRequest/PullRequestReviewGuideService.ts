@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Cause from "effect/Cause";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
@@ -225,7 +226,7 @@ const make = Effect.gen(function* () {
     );
     const baseTip = yield* git.resolveCommit({ cwd: workspaceRoot, revision: baseRef });
     const fetchHead = Effect.fn("PullRequestReviewGuideService.fetchHead")(function* (
-      number: number,
+      number: ChangeRequestNumber,
       reportedSha: string,
       branch: string,
     ) {

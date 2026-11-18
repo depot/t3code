@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import type { ThreadLinkedPullRequest, ThreadPullRequestLink } from "@t3tools/contracts";
 
 /** Tombstones prevent sync from re-adding hidden members. */
@@ -14,7 +15,7 @@ export function threadPullRequestUpdatedAtMs(link: ThreadPullRequestLink): numbe
 }
 
 export interface ThreadSearchPullRequest {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly title: string | null;
   /** `owner/repo#123` and the pull request URL, matched only by a whole query. */
   readonly references: ReadonlyArray<string>;

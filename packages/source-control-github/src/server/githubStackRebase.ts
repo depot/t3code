@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Redacted from "effect/Redacted";
@@ -8,14 +9,14 @@ import * as GitHubAppAccess from "./GitHubAppAccess.ts";
 import * as SourceControlHost from "@t3tools/source-control-core/server/SourceControlHost";
 
 export interface CascadeLayer {
-  readonly number: number;
+  readonly number: ChangeRequestNumber;
   readonly headBranch: string;
   readonly headSha: string;
 }
 
 export class GitHubStackRebaseConflictError extends Schema.TaggedError<GitHubStackRebaseConflictError>()(
   "GitHubStackRebaseConflictError",
-  { number: Schema.Int, completed: Schema.Int },
+  { number: ChangeRequestNumber, completed: Schema.Int },
 ) {
   override get message(): string {
     return `PR #${this.number} conflicts with the layer below it. ${this.completed} layers were rebased; resolve #${this.number} with \`gh stack rebase\` and push.`;
@@ -24,7 +25,12 @@ export class GitHubStackRebaseConflictError extends Schema.TaggedError<GitHubSta
 
 export class GitHubStackRebaseGitError extends Schema.TaggedError<GitHubStackRebaseGitError>()(
   "GitHubStackRebaseGitError",
-  { step: Schema.String, number: Schema.Int, completed: Schema.Int, cause: Schema.Defect() },
+  {
+    step: Schema.String,
+    number: ChangeRequestNumber,
+    completed: Schema.Int,
+    cause: Schema.Defect(),
+  },
 ) {
   override get message(): string {
     return `Stack rebase stopped at PR #${this.number} while ${this.step}. ${this.completed} layers were rebased.`;
@@ -85,8 +91,9 @@ export const cascadeRebaseStack = Effect.fn("cascadeRebaseStack")(function* (inp
       timeoutMs: 120_000,
       ...(allowNonZeroExit ? { allowNonZeroExit: true } : {}),
     });
-  const failed = (step: string, number: number, completed: number) => (cause: unknown) =>
-    new GitHubStackRebaseGitError({ step, number, completed, cause });
+  const failed =
+    (step: string, number: ChangeRequestNumber, completed: number) => (cause: unknown) =>
+      new GitHubStackRebaseGitError({ step, number, completed, cause });
 
   yield* git(["init", "--quiet"]).pipe(Effect.mapError(failed("preparing", first.number, 0)));
   yield* git(["remote", "add", "origin", remote]).pipe(

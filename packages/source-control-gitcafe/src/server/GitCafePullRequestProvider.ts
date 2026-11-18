@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
@@ -180,7 +181,7 @@ const decodeActionReply = Schema.decodeUnknownOption(
   ),
 );
 
-type PullRef = ProviderRepositoryRef & { readonly number: number };
+type PullRef = ProviderRepositoryRef & { readonly number: ChangeRequestNumber };
 
 /** GitHub's merge counts as soon as GitCafe records it, ahead of the sync that reports it. */
 const settledMerge = (pull: Json.GitCafePullDetail) =>
@@ -191,7 +192,7 @@ type Paged<A> = { readonly items: ReadonlyArray<A>; readonly next: string | null
 
 function stackHeadsCurrent(
   stack: Json.GitCafeStack,
-  input: { readonly number: number; readonly merge: boolean },
+  input: { readonly number: ChangeRequestNumber; readonly merge: boolean },
   expected: ReadonlyArray<PullRequestStackHead>,
 ): boolean {
   const members = stack.members.toSorted((a, b) => a.position - b.position);
@@ -607,7 +608,9 @@ export const make = Effect.gen(function* () {
   });
 
   const runStackAction = Effect.fn("GitCafePullRequestProvider.runStackAction")(function* (
-    input: Parameters<PullRequestProviderApi["runAction"]>[0] & { readonly stackNumber: number },
+    input: Parameters<PullRequestProviderApi["runAction"]>[0] & {
+      readonly stackNumber: ChangeRequestNumber;
+    },
   ) {
     const land = input.action === "merge";
     const operation = land ? "landStackThrough" : "restackStack";

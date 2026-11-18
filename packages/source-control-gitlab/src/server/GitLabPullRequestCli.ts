@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "@t3tools/contracts";
 import { removeAgentCredits } from "@t3tools/source-control-core/server/mergeMessage";
 import { isCommitSha } from "@t3tools/source-control-core/server/pullRequestUtils";
 import * as Context from "effect/Context";
@@ -135,7 +136,7 @@ export class GitLabDiffRefsUnavailableError extends Schema.TaggedError<GitLabDif
   {
     command: Schema.Literal("glab"),
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
   },
 ) {
   get detail(): string {
@@ -152,7 +153,7 @@ export class GitLabRevertUnavailableError extends Schema.TaggedError<GitLabRever
   {
     command: Schema.Literal("glab"),
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
     reason: Schema.Literals(["not-merged", "several-commits"]),
   },
 ) {
@@ -269,7 +270,7 @@ export class GitLabBranchDeletionRefusedError extends Schema.TaggedError<GitLabB
   {
     command: Schema.Literal("glab"),
     cwd: Schema.String,
-    number: Schema.Int,
+    number: ChangeRequestNumber,
     reason: Schema.Literals([
       "open",
       "not-allowed",
@@ -363,7 +364,7 @@ export interface GitLabMergeRequestListBatch {
   /** GitLab's GraphQL cursor past the last row, when the page was read through GraphQL. */
   readonly resumeAfter?: string;
   /** Present when the read already carried each row's approval and pipeline state. */
-  readonly listStates?: ReadonlyMap<number, GitLabMergeRequestListState>;
+  readonly listStates?: ReadonlyMap<ChangeRequestNumber, GitLabMergeRequestListState>;
 }
 
 export interface GitLabMergeRequestDiffSlice {
@@ -408,7 +409,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       /** `false` skips the stage and trigger job reads, as write permission checks do. */
       readonly downstreamChecks?: boolean;
       /** `false` skips a fork's maintainer edits permission read, for views that never show it. */
@@ -420,9 +421,9 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly numbers: ReadonlyArray<number>;
+      readonly numbers: ReadonlyArray<ChangeRequestNumber>;
     }) => Effect.Effect<
-      ReadonlyMap<number, GitLabMergeRequestListState>,
+      ReadonlyMap<ChangeRequestNumber, GitLabMergeRequestListState>,
       GitLabPullRequestCliError
     >;
 
@@ -432,12 +433,12 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly host?: string | undefined;
       readonly changeRequests: ReadonlyArray<{
         readonly repository: string;
-        readonly number: number;
+        readonly number: ChangeRequestNumber;
       }>;
     }) => Effect.Effect<
       ReadonlyArray<{
         readonly repository: string;
-        readonly number: number;
+        readonly number: ChangeRequestNumber;
         readonly additions: number;
         readonly deletions: number;
       }>,
@@ -448,21 +449,21 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ProviderFileStats, GitLabPullRequestCliError>;
 
     readonly getMergeRequestWatchFingerprint: (input: {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ProviderChangeRequestWatchFingerprint | null, GitLabPullRequestCliError>;
 
     readonly listNotes: (input: {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<
       { readonly comments: ReadonlyArray<PullRequestComment>; readonly truncated: boolean },
       GitLabPullRequestCliError
@@ -472,14 +473,14 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<ReadonlyArray<PullRequestCommit>, GitLabPullRequestCliError>;
 
     readonly getMergeRequestDiff: (input: {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly cursor?: string | undefined;
       readonly commit?: string | undefined;
     }) => Effect.Effect<GitLabMergeRequestDiffSlice, GitLabPullRequestCliError>;
@@ -488,7 +489,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly commit?: string | undefined;
       readonly changeType: "change" | "rename-pure" | "rename-changed" | "new" | "deleted";
       readonly oldPath: string;
@@ -508,7 +509,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly paths: ReadonlyArray<string>;
     }) => Effect.Effect<ReadonlyMap<string, string>, GitLabPullRequestCliError>;
 
@@ -516,7 +517,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly query?: string | undefined;
     }) => Effect.Effect<PullRequestReviewerCandidateList, GitLabPullRequestCliError>;
 
@@ -534,14 +535,14 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<PullRequestLabelCandidateList, GitLabPullRequestCliError>;
 
     readonly setLabels: (input: {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly labels: ReadonlyArray<string>;
       readonly applied: boolean;
     }) => Effect.Effect<void, GitLabPullRequestCliError>;
@@ -574,7 +575,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly reviewers: ReadonlyArray<{ readonly id: string }>;
       readonly requested: boolean;
     }) => Effect.Effect<void, GitLabPullRequestCliError>;
@@ -583,7 +584,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly action: PullRequestAction;
       readonly mergeMethod?: PullRequestMergeMethod;
       readonly removeAgentCreditsOnMerge?: boolean;
@@ -593,7 +594,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly title?: string | undefined;
       readonly description?: string | undefined;
       readonly allowCollaboration?: boolean | undefined;
@@ -603,7 +604,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly body: string;
     }) => Effect.Effect<void, GitLabPullRequestCliError>;
 
@@ -611,7 +612,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly noteId: string;
       readonly body: string;
     }) => Effect.Effect<void, GitLabPullRequestCliError>;
@@ -620,14 +621,14 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<GitLabDiscussionThreads, GitLabPullRequestCliError>;
 
     readonly submitReview: (input: {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly verdict: PullRequestReviewVerdict;
       readonly body: string;
       readonly comments: ReadonlyArray<PullRequestReviewCommentDraft>;
@@ -637,7 +638,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly discussionId: string;
       readonly body: string;
     }) => Effect.Effect<void, GitLabPullRequestCliError>;
@@ -646,7 +647,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly discussionId: string;
       readonly resolved: boolean;
     }) => Effect.Effect<void, GitLabPullRequestCliError>;
@@ -655,7 +656,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) => Effect.Effect<
       {
         readonly reactions: ReadonlyArray<PullRequestReaction>;
@@ -670,7 +671,7 @@ export class GitLabPullRequestCli extends Context.Service<
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
       readonly noteId?: string | undefined;
       readonly content: PullRequestReactionContent;
       readonly reacted: boolean;
@@ -1024,6 +1025,7 @@ function actionArgs(
       return ["reopen"];
     case "revert":
       return [];
+    case "withdraw-approval":
     case "approve-workflows":
     case "delete-branch":
       throw new Error(`GitLab merge request action ${action} is unsupported`);
@@ -1171,7 +1173,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly page: number;
     readonly commit?: string | undefined;
   }): Effect.Effect<GitLabMergeRequestDiffSlice, GitLabPullRequestCliError> =>
@@ -1256,7 +1258,7 @@ export const make = Effect.gen(function* () {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     },
     headers: ReadonlyArray<string>,
     page: number,
@@ -1276,7 +1278,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly page: number;
     readonly collected: ReadonlyArray<PullRequestComment>;
   }): Effect.Effect<
@@ -1321,7 +1323,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly page: number;
     readonly collected: ReadonlyArray<PullRequestConversationThread>;
     readonly collectedDiffRefs: ReadonlyMap<string, GitLabDiffRefs>;
@@ -1383,7 +1385,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }) =>
     api({
       cwd: input.cwd,
@@ -1413,7 +1415,7 @@ export const make = Effect.gen(function* () {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) {
       const project = `projects/${projectPath(input.repository)}`;
       const write = (path: string, body: object) =>
@@ -1486,7 +1488,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }): Effect.Effect<GitLabDiffRefs, GitLabPullRequestCliError> =>
     api({
       cwd: input.cwd,
@@ -1563,7 +1565,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }): Effect.Effect<GitLabMergeRequestDetail, GitLabPullRequestCliError> =>
     api({
       cwd: input.cwd,
@@ -1615,7 +1617,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly url: string;
   }): Effect.Effect<ReadonlyArray<PullRequestCheck> | null> =>
     URL.canParse(input.url)
@@ -1689,7 +1691,7 @@ export const make = Effect.gen(function* () {
 
   const awardSubjectPath = (input: {
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly noteId?: string | undefined;
   }) => {
     const mergeRequest = `projects/${projectPath(input.repository)}/merge_requests/${input.number}`;
@@ -1702,7 +1704,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly cursor: string | null;
     readonly page: number;
     readonly collected: {
@@ -1881,7 +1883,7 @@ export const make = Effect.gen(function* () {
     readonly filters?: PullRequestListFilters | undefined;
     readonly after: string | undefined;
     readonly collected: ReadonlyArray<GitLabMergeRequestListItem>;
-    readonly states: ReadonlyMap<number, GitLabMergeRequestListState>;
+    readonly states: ReadonlyMap<ChangeRequestNumber, GitLabMergeRequestListState>;
     readonly cursorAdvance: number;
     /** Bounds the walk when whole pages fail to decode. */
     readonly reads: number;
@@ -1933,7 +1935,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }) =>
     graphqlRead({
       cwd: input.cwd,
@@ -1948,7 +1950,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
   }) =>
     graphqlRead({
       cwd: input.cwd,
@@ -1964,7 +1966,7 @@ export const make = Effect.gen(function* () {
       readonly cwd: string;
       readonly host?: string | undefined;
       readonly repository: string;
-      readonly number: number;
+      readonly number: ChangeRequestNumber;
     }) {
       const refuse = (reason: GitLabBranchDeletionRefusedError["reason"]) =>
         new GitLabBranchDeletionRefusedError({
@@ -2030,7 +2032,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly numbers: ReadonlyArray<number>;
+    readonly numbers: ReadonlyArray<ChangeRequestNumber>;
   }) =>
     graphqlRead({
       cwd: input.cwd,
@@ -2046,14 +2048,16 @@ export const make = Effect.gen(function* () {
   const listMergeRequestStats: GitLabPullRequestCli["Service"]["listMergeRequestStats"] = (
     input,
   ) => {
-    const byRepository = new Map<string, Set<number>>();
+    const byRepository = new Map<string, Set<ChangeRequestNumber>>();
     for (const { repository, number } of input.changeRequests) {
-      const numbers = byRepository.get(repository) ?? new Set<number>();
+      const numbers = byRepository.get(repository) ?? new Set<ChangeRequestNumber>();
       numbers.add(number);
       byRepository.set(repository, numbers);
     }
-    const reads: Array<{ readonly repository: string; readonly numbers: ReadonlyArray<number> }> =
-      [];
+    const reads: Array<{
+      readonly repository: string;
+      readonly numbers: ReadonlyArray<ChangeRequestNumber>;
+    }> = [];
     for (const [repository, numberSet] of byRepository) {
       const numbers = [...numberSet];
       for (let start = 0; start < numbers.length; start += STAT_IIDS_PER_REQUEST) {
@@ -2066,7 +2070,7 @@ export const make = Effect.gen(function* () {
         mergeRequestStats({ cwd: input.cwd, host: input.host, ...read }).pipe(
           Effect.map((stats) =>
             read.numbers.flatMap((number) => {
-              const stat = stats.get(number);
+              const stat = stats.get(Number(number));
               return stat === undefined ? [] : [{ repository: read.repository, number, ...stat }];
             }),
           ),
@@ -2123,7 +2127,7 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly number: number;
+    readonly number: ChangeRequestNumber;
     readonly paths: ReadonlyArray<string>;
   }): Effect.Effect<ReadonlyMap<string, string>, GitLabPullRequestCliError> =>
     input.paths.length === 0
@@ -2162,8 +2166,11 @@ export const make = Effect.gen(function* () {
     readonly cwd: string;
     readonly host?: string | undefined;
     readonly repository: string;
-    readonly numbers: ReadonlyArray<number>;
-  }): Effect.Effect<ReadonlyMap<number, GitLabMergeRequestListState>, GitLabPullRequestCliError> =>
+    readonly numbers: ReadonlyArray<ChangeRequestNumber>;
+  }): Effect.Effect<
+    ReadonlyMap<ChangeRequestNumber, GitLabMergeRequestListState>,
+    GitLabPullRequestCliError
+  > =>
     graphqlRead({
       cwd: input.cwd,
       host: input.host,
@@ -2294,7 +2301,7 @@ export const make = Effect.gen(function* () {
     ),
 
     getListStates: Effect.fn("GitLabPullRequestCli.getListStates")(function (input) {
-      const batches: Array<ReadonlyArray<number>> = [];
+      const batches: Array<ReadonlyArray<ChangeRequestNumber>> = [];
       for (let at = 0; at < input.numbers.length; at += MAX_PAGE_SIZE) {
         batches.push(input.numbers.slice(at, at + MAX_PAGE_SIZE));
       }

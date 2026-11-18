@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import * as Cache from "effect/Cache";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -199,7 +200,7 @@ export const make = Effect.gen(function* () {
   const getRepositorySettings = (cwd: string, repository: string) =>
     Cache.get(repositorySettings, `${cwd}\n${repository}`);
 
-  const pullPath = (repository: string, number: number, suffix = "") =>
+  const pullPath = (repository: string, number: ChangeRequestNumber, suffix = "") =>
     `${OriginCli.originRepositoryPath(repository)}/pulls/${number}${suffix}`;
 
   // The last version of each pull request a listing or a read returned, most recent last. Reads
@@ -225,7 +226,7 @@ export const make = Effect.gen(function* () {
 
   // Opening a pull request reads its detail and its checks at once, and both start from the pull
   // request itself. Reads within a second share one request; this package's own writes drop it.
-  const pullKey = (input: ProviderRepositoryRef & { readonly number: number }) =>
+  const pullKey = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
     `${input.cwd}\n${input.repository}\n${input.number}`;
   const pulls = yield* Cache.makeWith(
     (key: string) => {
@@ -239,16 +240,16 @@ export const make = Effect.gen(function* () {
     },
     { capacity: 256, timeToLive: (exit) => (Exit.isSuccess(exit) ? "1 second" : 0) },
   );
-  const getPull = (input: ProviderRepositoryRef & { readonly number: number }) =>
+  const getPull = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
     Cache.get(pulls, pullKey(input));
-  const forgetPull = (input: ProviderRepositoryRef & { readonly number: number }) =>
+  const forgetPull = (input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber }) =>
     Cache.invalidate(pulls, pullKey(input)).pipe(
       Effect.andThen(Effect.sync(() => lastSeen.delete(pullKey(input)))),
     );
 
   /** `dependents` of the fresh pull request, started early from the last-seen version. */
   const withPull = Effect.fn("OriginPullRequestProvider.withPull")(function* <A>(
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
     dependents: (pullRequest: OriginPullRequest) => Effect.Effect<A, OriginCli.OriginCliError>,
   ) {
     const seen = lastSeen.get(pullKey(input));
@@ -439,7 +440,7 @@ export const make = Effect.gen(function* () {
    * moved, only `/mergeability` knows.
    */
   const mergeabilityOf = (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
     pullRequest: OriginPullRequest,
   ): Effect.Effect<PullRequestMergeability, OriginCli.OriginCliError> => {
     if (originState(pullRequest) !== "open" || !pullRequest.head.sha)
@@ -521,7 +522,7 @@ export const make = Effect.gen(function* () {
 
   /** `origin pr view` arguments that print `fields` for one pull request, avatars included. */
   const viewArgs = (
-    input: { readonly repository: string; readonly number: number },
+    input: { readonly repository: string; readonly number: ChangeRequestNumber },
     fields: string,
   ) => ["pr", "view", String(input.number), "-R", input.repository, "--json", fields];
 
@@ -567,9 +568,9 @@ export const make = Effect.gen(function* () {
   // Origin merges a stacked pull request together with every open one below it, which the panel
   // does not show, so those merges are left to Origin.
   const refuseStackedMerge = Effect.fn("OriginPullRequestProvider.refuseStackedMerge")(function* (
-    input: ProviderRepositoryRef & { readonly number: number },
+    input: ProviderRepositoryRef & { readonly number: ChangeRequestNumber },
   ) {
-    const read = (number: number) =>
+    const read = (number: ChangeRequestNumber) =>
       getPull({ ...input, number }).pipe(Effect.mapError(fail("runAction")));
     const parent = (yield* read(input.number)).stack?.parentPullRequest?.number;
     if (parent == null) return;

@@ -1,3 +1,4 @@
+import { ChangeRequestNumber } from "./baseSchemas.ts";
 import * as Schema from "effect/Schema";
 
 import { AssistantCitation } from "./assistantCitations.ts";
@@ -7,7 +8,6 @@ import {
   GuestMessageId,
   GuestShareId,
   NonNegativeInt,
-  PositiveInt,
   ThreadId,
   TrimmedNonEmptyString,
   TurnItemId,
@@ -72,7 +72,7 @@ const ShortString = BoundedString(2_048);
 const NullableShortString = Schema.NullOr(ShortString);
 
 export const PullRequestContextMetadata = Schema.Struct({
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: ShortString,
   url: ShortString,
   headBranch: ShortString,

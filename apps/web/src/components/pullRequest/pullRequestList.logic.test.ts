@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { SourceControlProviderKind } from "@t3tools/contracts";
 import type {
   EnvironmentId,
@@ -160,7 +161,7 @@ describe("pull request involvement filtering", () => {
 });
 
 describe("ranking what a search found", () => {
-  const row = (overrides: Partial<PullRequestListEntry> & { number?: number }) =>
+  const row = (overrides: Partial<PullRequestListEntry> & { number?: ChangeRequestNumber }) =>
     entry({ number: 1, ...overrides });
 
   it.each([
@@ -358,7 +359,7 @@ describe("blocked-on-me ranking", () => {
 });
 
 describe("partitioning with the hosts' own priority reads", () => {
-  const authoredRow = (number: number, updatedAt: string) =>
+  const authoredRow = (number: ChangeRequestNumber, updatedAt: string) =>
     entry({ number, updatedAt, author: { login: "Bilal", name: null, avatarUrl: null } });
 
   it("keeps Others in feed order when a continuation lands an authored row already partitioned", () => {
@@ -643,7 +644,7 @@ describe("the server a saved selection names", () => {
 });
 
 describe("the priority groups against a paginated feed", () => {
-  const authoredRow = (number: number, updatedAt: string) =>
+  const authoredRow = (number: ChangeRequestNumber, updatedAt: string) =>
     entry({ number, updatedAt, author: { login: "Bilal", name: null, avatarUrl: null } });
 
   it("shows every authored row the host reported, not only the ones the feed page holds", () => {
@@ -666,7 +667,7 @@ describe("the priority groups against a paginated feed", () => {
 });
 
 describe("pull request list overrides", () => {
-  const entry = (number: number, state: "open" | "closed" | "merged") =>
+  const entry = (number: ChangeRequestNumber, state: "open" | "closed" | "merged") =>
     ({
       host: "github.com",
       repository: "pingdotgg/t3code",
@@ -676,7 +677,7 @@ describe("pull request list overrides", () => {
       updatedAt: "2026-07-01T00:00:00Z",
       labels: [],
     }) as unknown as PullRequestListEntry;
-  const key = (row: { number: number }) => `#${row.number}`;
+  const key = (row: { number: ChangeRequestNumber }) => `#${row.number}`;
 
   it("writes the override over the row and drops it from a list whose state it left", () => {
     const rows = [entry(1, "open"), entry(2, "open")];
@@ -729,9 +730,9 @@ describe("pull request list overrides", () => {
 });
 
 describe("pull request list override settlement", () => {
-  const entry = (number: number, state: "open" | "closed" | "merged") =>
+  const entry = (number: ChangeRequestNumber, state: "open" | "closed" | "merged") =>
     ({ number, state, isDraft: false, labels: [] }) as unknown as PullRequestListEntry;
-  const key = (row: { number: number }) => `#${row.number}`;
+  const key = (row: { number: ChangeRequestNumber }) => `#${row.number}`;
 
   it("keeps an override until an answer agrees with it", () => {
     const at = 1_000_000;

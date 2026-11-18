@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import { resolvePullRequestDetailChecks } from "@t3tools/client-runtime/pull-request-checks";
 import {
   capitalizeTerm,
@@ -102,7 +103,7 @@ export function ThreadDetailsPrRow({
 }: {
   environmentId: EnvironmentId;
   pr: ThreadPr;
-  number: number;
+  number: ChangeRequestNumber;
   reference?: Pick<PullRequestRef, "host" | "repository" | "number"> | null;
   status: PrStatusIndicator | null;
   project: EnvironmentProject | null;

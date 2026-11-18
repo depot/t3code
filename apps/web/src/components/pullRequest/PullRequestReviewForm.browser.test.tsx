@@ -40,6 +40,7 @@ it("submits only the line comments still in the draft when dictation finishes", 
       completionScope={null}
       term="pull request"
       verdicts={["comment"]}
+      headOid={"a".repeat(40)}
       requestChangesSummaryRequired={false}
       textareaRef={createRef()}
       pending={false}
@@ -52,7 +53,58 @@ it("submits only the line comments still in the draft when dictation finishes", 
   await act(() => mocks.queue.mock.calls[0]![0]("Dictated summary"));
   expect(mocks.submit).toHaveBeenCalledWith(
     expect.objectContaining({
-      input: expect.objectContaining({ body: "Dictated summary", comments: [] }),
+      input: expect.objectContaining({
+        body: "Dictated summary",
+        comments: [],
+        expectedHeadOid: "a".repeat(40),
+      }),
     }),
   );
+});
+
+it("submits an approval without dictation using the displayed revision and preserves a hidden summary", async () => {
+  mocks.submit.mockClear();
+  mocks.queue.mockClear();
+  const reference = { projectId: ProjectId.make("test"), repository: "org/repo", number: "mr_1" };
+  const key = pullRequestReviewKey(reference);
+  const store = usePullRequestReviewStore.getState();
+  store.clear(key);
+  store.setSummary(key, "Keep this draft");
+  const form = (headOid: string) => (
+    <PullRequestReviewForm
+      active
+      environmentId={EnvironmentId.make("test")}
+      reference={reference}
+      completionScope={null}
+      term="merge request"
+      verdicts={["approve"]}
+      headOid={headOid}
+      summarySupported={false}
+      requestChangesSummaryRequired={false}
+      textareaRef={createRef()}
+      pending={false}
+      onPendingChange={vi.fn()}
+      onSubmitted={vi.fn()}
+    />
+  );
+  await using screen = await render(form("a".repeat(40)));
+  await expect
+    .element(screen.getByRole("textbox", { name: "Review summary" }))
+    .not.toBeInTheDocument();
+  await screen.rerender(form("b".repeat(40)));
+  await expect.element(screen.getByText("Approve revision bbbbbbb.")).toBeVisible();
+  await screen.getByRole("button", { name: "Submit review" }).click();
+  expect(mocks.queue).not.toHaveBeenCalled();
+  expect(mocks.submit).toHaveBeenCalledWith(
+    expect.objectContaining({
+      input: {
+        ...reference,
+        expectedHeadOid: "b".repeat(40),
+        verdict: "approve",
+        body: "",
+        comments: [],
+      },
+    }),
+  );
+  expect(usePullRequestReviewStore.getState().summaries[key]).toBe("Keep this draft");
 });

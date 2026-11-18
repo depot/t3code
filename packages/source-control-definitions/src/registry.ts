@@ -1,3 +1,4 @@
+import * as Depot from "@t3tools/source-control-depot/shared/definition";
 import * as AzureDevOps from "@t3tools/source-control-azure-devops/shared/definition";
 import * as Bitbucket from "@t3tools/source-control-bitbucket/shared/definition";
 import { makeSourceControlDefinitionRegistry } from "@t3tools/source-control-core/shared/definition";
@@ -19,6 +20,7 @@ export const builtInSourceControlDefinitions = makeSourceControlDefinitionRegist
   [
     GitHub.definition,
     CursorOrigin.definition,
+    Depot.definition,
     GitLab.definition,
     GitCafe.definition,
     Forgejo.definition,
@@ -29,11 +31,13 @@ export const builtInSourceControlDefinitions = makeSourceControlDefinitionRegist
     claimChangeRequestUrlsFirst: [
       GitCafe.definition.kind,
       CursorOrigin.definition.kind,
+      Depot.definition.kind,
       AzureDevOps.definition.kind,
     ],
     recognizeRemotesIn: [
       GitCafe.definition.kind,
       CursorOrigin.definition.kind,
+      Depot.definition.kind,
       Forgejo.definition.kind,
       GitHub.definition.kind,
       GitLab.definition.kind,

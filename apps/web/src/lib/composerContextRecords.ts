@@ -1,3 +1,4 @@
+import type { ChangeRequestNumber } from "@t3tools/contracts";
 import {
   capitalizeTerm,
   sourceControlClients,
@@ -92,7 +93,7 @@ export function isPullRequestSummaryContext(comment: ReviewCommentPresentation):
   );
 }
 
-function pullRequestContextNumber(comment: ReviewCommentPresentation): number | null {
+function pullRequestContextNumber(comment: ReviewCommentPresentation): ChangeRequestNumber | null {
   if (comment.pullRequest !== undefined) return comment.pullRequest.number;
   const legacyNumber = /^PR #(\d+)$/u.exec(comment.filePath)?.[1];
   return legacyNumber === undefined ? null : Number(legacyNumber);

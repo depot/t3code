@@ -1,5 +1,6 @@
+import { ChangeRequestNumber } from "./baseSchemas.ts";
 import * as Schema from "effect/Schema";
-import { PositiveInt, TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { VcsDriverKind } from "./vcs.ts";
 
 /** Accept unknown hosts so clients can fall back to generic presentation. */
@@ -21,7 +22,7 @@ export type ChangeRequestState = typeof ChangeRequestState.Type;
 
 export const ChangeRequest = Schema.Struct({
   provider: SourceControlProviderKind,
-  number: PositiveInt,
+  number: ChangeRequestNumber,
   title: TrimmedNonEmptyString,
   url: Schema.String,
   baseRefName: TrimmedNonEmptyString,

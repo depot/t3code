@@ -1,6 +1,6 @@
 # Source control
 
-T3 Code integrates with GitHub, GitLab, Forgejo, Gitea, Bitbucket, Azure DevOps, GitCafe, and Cursor
+T3 Code integrates with GitHub, GitLab, Forgejo, Gitea, Bitbucket, Azure DevOps, GitCafe, Depot Code, and Cursor
 Origin to clone and publish repositories, create pull requests, and review changes.
 
 ## Review turn changes
@@ -71,6 +71,54 @@ Install [GitLab CLI](https://gitlab.com/gitlab-org/cli), then sign in:
 ```bash
 glab auth login
 ```
+
+### Depot Code
+
+Install the Depot CLI with `depot mr` support on the machine running your T3 Code server,
+then run `depot login`. Select the repository's organization with `depot org switch` if its
+Git remote does not include an organization ID.
+
+To clone a Depot repository, choose Depot Code and enter `organization-id/repository-name`
+or its Depot repository URL. New repositories are private to the selected organization.
+Repository lookup and MR checkout require Depot CLI 2.103.27 or later.
+Configure Git HTTPS credentials on the server for cloning. Checkout uses your existing remote's
+transport and Git credentials; `depot login` alone only authenticates CLI API requests.
+Checkout preserves local changes and uses the MR's recorded
+commit. To inspect a closed or merged MR locally, use `depot mr checkout --id <id> --detach`;
+a worktree can also open the recorded revision while it remains available on the server.
+
+Link a merge request by pasting its full Depot URL into **Link pull request**. T3 Code keeps
+its status up to date and settles the linked thread after it merges, using the same settlement
+rules as other hosts. You can also create, edit, close, and reopen merge requests.
+
+T3 Code reads your identity with `depot mr viewer` and uses the permissions returned by Depot
+to enable merge request actions. This requires a CLI and API with viewer support; an older API
+that does not report permissions leaves actions disabled.
+
+Open a linked merge request to see CI and agent checks, approvals, and merge conflicts.
+Check results link to their details in Depot. Missing or incomplete results remain unavailable
+until Depot reports them; readiness is advisory and does not enforce a merge policy.
+
+Merge or squash from the linked merge request. This requires a Depot CLI whose `depot mr merge`
+supports `--id`, `--expected-head-oid`, and `--expected-base-ref`. If the head or destination changes
+during the operation, refresh and review it before retrying. T3 Code settles the linked thread
+when Depot confirms the merge.
+
+Approve the revision shown in the review form, or choose **Withdraw approval** from the actions
+menu. Approval requires a Depot CLI with `mr approve --id --expected-head-oid` support. If someone
+pushes another commit before the approval completes, refresh and review the new revision first.
+You can also post conversation comments or select lines in a diff to leave feedback, including
+line ranges. Inline comments require a CLI with revision-aware comment support. If the head or
+base changes, refresh the diff and recreate the affected comments. Each comment posts separately;
+if a later submission fails, only the unsent drafts remain. A review summary is posted as a
+conversation comment before approval. Edit is available on your own conversation and line comments
+when Depot reports comment permissions. Depot reviews offer comments, approval and approval
+withdrawal; a separate request-changes verdict is not available.
+
+Changed files and commit history require a Depot CLI with `depot mr diff`, `mr commits`, and
+`mr file`. Diffs use the recorded MR revisions, so merged requests keep their original changes
+after branch deletion or reuse. Binary and oversized files are marked explicitly; older MRs
+without a recorded base cannot show a historical diff. Rebase merging is not available yet.
 
 ### Bitbucket
 
